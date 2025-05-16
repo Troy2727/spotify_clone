@@ -1,0 +1,66 @@
+name: Git Workflow
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Run ESLint
+        run: |
+          npm run lint
+
+  conventional-commits:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json
+
+  branch-naming:
+    name: Validate Branch Naming
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          PATTERN="^(feature|bugfix|hotfix|release|chore)\/[a-z0-9-]+$"
+
+          if [[ ! $BRANCH_NAME =~ $PATTERN ]]; then
+            echo "Branch name '$BRANCH_NAME' does not follow the naming convention."
+            echo "Branch names should follow the pattern: feature/branch-name, bugfix/branch-name, etc."
+            exit 1
+          fi
+
+          echo "Branch name '$BRANCH_NAME' is valid."

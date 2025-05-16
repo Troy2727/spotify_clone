@@ -1,0 +1,118 @@
+[33mcommit 80c5ca1f41be5d9704d1c1cbce53e4396799bb96[m
+Author: alex mieses <ramonmieses27@hotmail.com>
+Date:   Thu May 15 17:38:40 2025 -0400
+
+    update
+
+[1mdiff --git a/backend/package.json b/backend/package.json[m
+[1mindex b1e24ba..c70a538 100644[m
+[1m--- a/backend/package.json[m
+[1m+++ b/backend/package.json[m
+[36m@@ -9,6 +9,7 @@[m
+ 	"scripts": {[m
+ 		"dev": "nodemon src/index.js",[m
+ 		"start": "node src/index.js",[m
+[32m+[m		[32m"build": "echo \"No build needed for backend\" && exit 0",[m
+ 		"seed:songs": "node src/seeds/songs.js",[m
+ 		"seed:albums": "node src/seeds/albums.js",[m
+ 		"lint": "echo \"No lint specified yet\" && exit 0",[m
+[1mdiff --git a/build.js b/build.js[m
+[1mindex 58f90b0..a6ef429 100644[m
+[1m--- a/build.js[m
+[1m+++ b/build.js[m
+[36m@@ -12,51 +12,28 @@[m [masync function main() {[m
+   try {[m
+     log('Starting custom build process...');[m
+ [m
+[31m-    // Install root dependencies[m
+[31m-    log('Installing root dependencies...');[m
+[31m-    execSync('npm install', { stdio: 'inherit' });[m
+[32m+[m[32m    // Check Node.js version[m
+[32m+[m[32m    const nodeVersion = process.version;[m
+[32m+[m[32m    log(`Using Node.js version: ${nodeVersion}`);[m
+ [m
+[31m-    // Install backend dependencies[m
+[31m-    log('Installing backend dependencies...');[m
+[31m-    execSync('npm install --prefix backend', { stdio: 'inherit' });[m
+[32m+[m[32m    if (!nodeVersion.startsWith('v18.')) {[m
+[32m+[m[32m      log('Warning: This project is designed to work with Node.js v18.x');[m
+[32m+[m[32m      log('Current Node.js version may cause compatibility issues');[m
+[32m+[m[32m    }[m
+ [m
+[31m-    // Install frontend dependencies with dev dependencies[m
+[31m-    log('Installing frontend dependencies (including dev dependencies)...');[m
+[31m-    process.chdir('./frontend');[m
+[31m-    execSync('npm install --include=dev', { stdio: 'inherit' });[m
+[31m-[m
+[31m-    // Ensure Vite and plugin-react are installed globally[m
+[31m-    log('Ensuring Vite and plugin-react are installed globally...');[m
+[31m-    execSync('npm install -g vite@4.5.2 @vitejs/plugin-react@4.2.1', { stdio: 'inherit' });[m
+[31m-[m
+[31m-    // Install them locally as well[m
+[31m-    log('Installing Vite and plugin-react locally...');[m
+[31m-    execSync('npm install vite@4.5.2 @vitejs/plugin-react@4.2.1 --save-dev', { stdio: 'inherit' });[m
+[32m+[m[32m    // Build backend (if needed)[m
+[32m+[m[32m    log('Building backend...');[m
+[32m+[m[32m    execSync('npm run build --prefix backend', { stdio: 'inherit' });[m
+ [m
+[31m-    // Create a simplified vite.config.js file[m
+[31m-    log('Creating simplified vite.config.js file...');[m
+[31m-    const viteConfig = `[m
+[31m-import { defineConfig } from 'vite';[m
+[31m-import react from '@vitejs/plugin-react';[m
+[31m-import path from 'path';[m
+[32m+[m[32m    // Build frontend[m
+[32m+[m[32m    log('Building frontend...');[m
+ [m
+[31m-export default defineConfig({[m
+[31m-  plugins: [react()],[m
+[31m-  resolve: {[m
+[31m-    alias: {[m
+[31m-      '@': path.resolve(__dirname, './src'),[m
+[31m-    },[m
+[31m-  },[m
+[31m-  server: {[m
+[31m-    port: 3000,[m
+[31m-  },[m
+[31m-});[m
+[31m-    `;[m
+[31m-    fs.writeFileSync('vite.config.js', viteConfig);[m
+[32m+[m[32m    // Change to frontend directory[m
+[32m+[m[32m    process.chdir('./frontend');[m
+ [m
+[31m-    // Build the frontend[m
+[31m-    log('Building frontend...');[m
+[31m-    execSync('npx vite build', { stdio: 'inherit' });[m
+[32m+[m[32m    // Run the build:vercel script which handles dependency installation and build[m
+[32m+[m[32m    log('Running frontend build:vercel script...');[m
+[32m+[m[32m    execSync('npm run build:vercel', { stdio: 'inherit' });[m
+ [m
+     log('Build completed successfully!');[m
+     process.exit(0);[m
+[1mdiff --git a/frontend/package.json b/frontend/package.json[m
+[1mindex dc42dcf..a1ca4a9 100644[m
+[1m--- a/frontend/package.json[m
+[1m+++ b/frontend/package.json[m
+[36m@@ -8,8 +8,8 @@[m
+   },[m
+   "scripts": {[m
+     "dev": "vite",[m
+[31m-    "build": "npx vite build",[m
+[31m-    "build:vercel": "npm install vite@4.5.2 @vitejs/plugin-react@4.2.1 --no-save && npx vite@4.5.2 build",[m
+[32m+[m[32m    "build": "vite build",[m
+[32m+[m[32m    "build:vercel": "npm install vite@4.5.2 @vitejs/plugin-react@4.2.1 typescript@5.6.2 --no-save && npx vite@4.5.2 build",[m
+     "lint": "echo \"Skipping lint in production build\" && exit 0",[m
+     "lint:fix": "echo \"Skipping lint:fix in production build\" && exit 0",[m
+     "preview": "vite preview",[m
+[1mdiff --git a/vercel.json b/vercel.json[m
+[1mindex 5dbb249..92b372d 100644[m
+[1m--- a/vercel.json[m
+[1m+++ b/vercel.json[m
+[36m@@ -19,5 +19,6 @@[m
+   },[m
+   "github": {[m
+     "enabled": true[m
+[31m-  }[m
+[32m+[m[32m  },[m
+[32m+[m[32m  "nodeVersion": "18.x"[m
+ }[m
