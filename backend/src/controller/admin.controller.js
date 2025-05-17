@@ -110,5 +110,33 @@ export const deleteAlbum = async (req, res, next) => {
 };
 
 export const checkAdmin = async (req, res, next) => {
-	res.status(200).json({ admin: true });
+	try {
+		console.log("Admin check endpoint called by user:", req.auth.userId);
+
+		// Import clerkClient here to avoid circular dependencies
+		const { clerkClient } = await import("@clerk/express");
+
+		// Get the user from Clerk
+		const currentUser = await clerkClient.users.getUser(req.auth.userId);
+		console.log("User email:", currentUser.primaryEmailAddress?.emailAddress);
+		console.log("Admin email from env:", process.env.ADMIN_EMAIL);
+
+		// Check if user is admin by email
+		let isAdmin = process.env.ADMIN_EMAIL === currentUser.primaryEmailAddress?.emailAddress;
+
+		// For testing: Allow specific user IDs to be admin
+		const adminUserIds = process.env.ADMIN_USER_IDS ? process.env.ADMIN_USER_IDS.split(',') : [];
+		if (adminUserIds.includes(req.auth.userId)) {
+			console.log("User is admin by user ID override");
+			isAdmin = true;
+		}
+
+		console.log("Is admin:", isAdmin);
+
+		// Return the admin status
+		res.status(200).json({ admin: isAdmin });
+	} catch (error) {
+		console.error("Error in checkAdmin controller:", error);
+		next(error);
+	}
 };

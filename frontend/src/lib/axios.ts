@@ -17,15 +17,12 @@ export const axiosInstance = axios.create({
 	}
 });
 
-// Add request interceptor to bypass API calls in Vercel production
+// Add request interceptor for API calls
 axiosInstance.interceptors.request.use(
 	(config) => {
-		// If we're in Vercel production, cancel the request
-		if (isVercelProduction()) {
-			// Create a canceled request
-			const source = axios.CancelToken.source();
-			config.cancelToken = source.token;
-			source.cancel('Request canceled in Vercel production environment');
+		// Log the request in development
+		if (import.meta.env.DEV) {
+			console.log('API Request:', config.method?.toUpperCase(), config.url);
 		}
 		return config;
 	},
@@ -38,15 +35,22 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
 	(response) => response,
 	async (error) => {
-		// Don't log canceled requests in Vercel production
+		// Handle canceled requests
 		if (axios.isCancel(error)) {
 			console.log('Request canceled:', error.message);
 		} else {
-			console.error('API Error:', error);
+			// Log detailed error information
+			console.error('API Error:', {
+				message: error.message,
+				status: error.response?.status,
+				data: error.response?.data,
+				url: error.config?.url,
+				method: error.config?.method
+			});
 
-			// If the error is a timeout or network error, we can retry
+			// If the error is a timeout or network error, we can provide more info
 			if (error.code === 'ECONNABORTED' || !error.response) {
-				console.log('Network error or timeout, using fallback data');
+				console.log('Network error or timeout. Please check your connection.');
 			}
 		}
 
