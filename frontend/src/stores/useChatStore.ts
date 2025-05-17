@@ -3,6 +3,27 @@ import { Message, User } from "@/types";
 import { create } from "zustand";
 import { io } from "socket.io-client";
 
+// Use environment variable or default to window location for production
+const getBaseURL = () => {
+	// In development, use the API URL from environment variables
+	if (import.meta.env.DEV && import.meta.env.VITE_API_URL) {
+		// Extract the base URL without the /api suffix
+		const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
+		console.log('Using base URL for socket connection:', baseUrl);
+		return baseUrl;
+	}
+
+	// In production, use the current origin
+	const origin = window.location.origin;
+	console.log('Using origin for socket connection:', origin);
+	return origin;
+};
+
+// Check if we're in Vercel production environment
+const isVercelProduction = () => {
+	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
+};
+
 interface ChatStore {
 	users: User[];
 	isLoading: boolean;
@@ -22,39 +43,52 @@ interface ChatStore {
 	setSelectedUser: (user: User | null) => void;
 }
 
-// Use environment variable or default to window location for production
-const getBaseURL = () => {
-	// In development, use the API URL from environment variables
-	if (import.meta.env.DEV && import.meta.env.VITE_API_URL) {
-		// Extract the base URL without the /api suffix
-		return import.meta.env.VITE_API_URL.replace('/api', '');
-	}
-
-	// In production, use the current origin
-	return window.location.origin;
-};
-
-// Check if we're in Vercel production environment
-const isVercelProduction = () => {
-	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
-};
-
 // Initialize socket with dynamic configuration, but only if not in Vercel production
 let socket;
 if (!isVercelProduction()) {
-	socket = io(getBaseURL(), {
-		autoConnect: false, // only connect if user is authenticated
-		withCredentials: true,
-		path: '/socket.io', // Default path for socket.io
-	});
+	const socketURL = getBaseURL();
+	console.log('Initializing socket with URL:', socketURL);
+
+	try {
+		// Force using the explicit URL with no path transformation
+		socket = io(socketURL, {
+			autoConnect: false, // only connect if user is authenticated
+			withCredentials: true,
+			path: '/socket.io', // Default path for socket.io
+			reconnectionAttempts: 10,
+			reconnectionDelay: 1000,
+			timeout: 20000,
+			transports: ['websocket', 'polling'], // Try WebSocket first, then fall back to polling
+			forceNew: true // Force a new connection
+		});
+
+		// Log socket state
+		console.log('Socket initialized with options:', {
+			url: socketURL,
+			connected: socket.connected,
+			id: socket.id
+		});
+	} catch (error) {
+		console.error('Error initializing socket:', error);
+		// Fallback to mock socket
+		socket = createMockSocket();
+	}
 } else {
 	// Create a dummy socket for Vercel production
 	console.log('Running in Vercel production - using mock socket');
-	socket = {
+	socket = createMockSocket();
+}
+
+// Helper function to create a mock socket
+function createMockSocket() {
+	return {
 		connected: false,
 		on: () => {},
 		emit: () => {},
-		connect: () => {},
+		connect: () => {
+			console.log('Mock socket connected');
+			return true;
+		},
 		disconnect: () => {},
 	};
 }
@@ -143,68 +177,166 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 			return;
 		}
 
-		if (!get().isConnected) {
+		// If already connected, don't reconnect
+		if (get().isConnected && socket.connected) {
+			console.log("Socket already connected, skipping reconnection");
+			return;
+		}
+
+		// Force disconnect if socket exists but is in a bad state
+		if (socket && typeof socket.disconnect === 'function') {
+			console.log("Forcing socket disconnect before reconnecting");
+			try {
+				socket.disconnect();
+			} catch (e) {
+				console.error("Error during forced disconnect:", e);
+			}
+		}
+
+		// Remove any existing listeners to prevent duplicates
+		if (socket && typeof socket.off === 'function') {
+			console.log("Removing existing socket listeners");
+			socket.off("connect");
+			socket.off("connect_error");
+			socket.off("disconnect");
+			socket.off("reconnect");
+			socket.off("reconnect_attempt");
+			socket.off("reconnect_error");
+			socket.off("reconnect_failed");
+			socket.off("users_online");
+			socket.off("activities");
+			socket.off("user_connected");
+			socket.off("user_disconnected");
+			socket.off("receive_message");
+			socket.off("message_sent");
+			socket.off("message_error");
+			socket.off("activity_updated");
+		}
+
+		// Set authentication
+		if (socket) {
 			socket.auth = { userId };
-			console.log("Connecting socket with auth:", socket.auth);
+			console.log("Setting socket auth:", socket.auth);
+		}
+
+		// Try to connect
+		try {
+			console.log("Attempting to connect socket...");
 			socket.connect();
 
-			socket.on("connect", () => {
-				console.log("Socket connected successfully");
+			// Log connection attempt
+			console.log("Socket connection initiated, current state:", {
+				connected: socket.connected,
+				id: socket.id,
+				auth: socket.auth
+			});
+		} catch (error) {
+			console.error("Error connecting socket:", error);
+			// Use fallback data
+			set({
+				isConnected: true,
+				onlineUsers: new Set(['test_user_1', 'test_user_2'])
+			});
+			return;
+		}
+
+		// Set up connection event listeners
+		socket.on("connect", () => {
+			console.log("Socket connected successfully:", {
+				id: socket.id,
+				connected: socket.connected
+			});
+
+			// Emit user_connected event to server
+			try {
 				socket.emit("user_connected", userId);
-			});
-
-			socket.on("connect_error", (error) => {
-				console.error("Socket connection error:", error);
-				// If connection fails, set mock online users for better UI experience
-				set({
-					onlineUsers: new Set(['test_user_1', 'test_user_2'])
-				});
-			});
-
-			socket.on("users_online", (users: string[]) => {
-				set({ onlineUsers: new Set(users) });
-			});
-
-			socket.on("activities", (activities: [string, string][]) => {
-				set({ userActivities: new Map(activities) });
-			});
-
-			socket.on("user_connected", (userId: string) => {
-				set((state) => ({
-					onlineUsers: new Set([...state.onlineUsers, userId]),
-				}));
-			});
-
-			socket.on("user_disconnected", (userId: string) => {
-				set((state) => {
-					const newOnlineUsers = new Set(state.onlineUsers);
-					newOnlineUsers.delete(userId);
-					return { onlineUsers: newOnlineUsers };
-				});
-			});
-
-			socket.on("receive_message", (message: Message) => {
-				set((state) => ({
-					messages: [...state.messages, message],
-				}));
-			});
-
-			socket.on("message_sent", (message: Message) => {
-				set((state) => ({
-					messages: [...state.messages, message],
-				}));
-			});
-
-			socket.on("activity_updated", ({ userId, activity }) => {
-				set((state) => {
-					const newActivities = new Map(state.userActivities);
-					newActivities.set(userId, activity);
-					return { userActivities: newActivities };
-				});
-			});
+				console.log("Emitted user_connected event with userId:", userId);
+			} catch (e) {
+				console.error("Error emitting user_connected event:", e);
+			}
 
 			set({ isConnected: true });
-		}
+		});
+
+		socket.on("connect_error", (error) => {
+			console.error("Socket connection error:", error);
+			// If connection fails, set mock online users for better UI experience
+			set({
+				onlineUsers: new Set(['test_user_1', 'test_user_2'])
+			});
+		});
+
+		socket.on("disconnect", (reason) => {
+			console.log("Socket disconnected:", reason);
+			// Don't set isConnected to false to prevent UI flicker during reconnects
+		});
+
+		socket.on("reconnect_attempt", (attemptNumber) => {
+			console.log(`Socket reconnection attempt #${attemptNumber}`);
+		});
+
+		socket.on("reconnect", (attemptNumber) => {
+			console.log(`Socket reconnected after ${attemptNumber} attempts`);
+			// Re-emit user_connected after reconnection
+			socket.emit("user_connected", userId);
+		});
+
+		// Set up application event listeners
+		socket.on("users_online", (users: string[]) => {
+			console.log("Received online users:", users);
+			set({ onlineUsers: new Set(users) });
+		});
+
+		socket.on("activities", (activities: [string, string][]) => {
+			console.log("Received user activities:", activities);
+			set({ userActivities: new Map(activities) });
+		});
+
+		socket.on("user_connected", (userId: string) => {
+			console.log("User connected:", userId);
+			set((state) => ({
+				onlineUsers: new Set([...state.onlineUsers, userId]),
+			}));
+		});
+
+		socket.on("user_disconnected", (userId: string) => {
+			console.log("User disconnected:", userId);
+			set((state) => {
+				const newOnlineUsers = new Set(state.onlineUsers);
+				newOnlineUsers.delete(userId);
+				return { onlineUsers: newOnlineUsers };
+			});
+		});
+
+		socket.on("receive_message", (message: Message) => {
+			console.log("Received message:", message);
+			set((state) => ({
+				messages: [...state.messages, message],
+			}));
+		});
+
+		socket.on("message_sent", (message: Message) => {
+			console.log("Message sent confirmation:", message);
+			set((state) => ({
+				messages: [...state.messages, message],
+			}));
+		});
+
+		socket.on("message_error", (error: string) => {
+			console.error("Message error from server:", error);
+		});
+
+		socket.on("activity_updated", ({ userId, activity }) => {
+			console.log("Activity updated:", { userId, activity });
+			set((state) => {
+				const newActivities = new Map(state.userActivities);
+				newActivities.set(userId, activity);
+				return { userActivities: newActivities };
+			});
+		});
+
+		// Set connected state
+		set({ isConnected: socket.connected });
 	},
 
 	disconnectSocket: () => {
