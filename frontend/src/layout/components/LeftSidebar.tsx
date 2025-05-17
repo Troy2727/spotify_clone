@@ -2,15 +2,17 @@ import PlaylistSkeleton from "@/components/skeletons/PlaylistSkeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { SignedIn, useClerk } from "@clerk/clerk-react";
-import { HomeIcon, Library, LogOut, MessageCircle } from "lucide-react";
+import { HomeIcon, LayoutDashboardIcon, Library, LogOut, MessageCircle } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const LeftSidebar = () => {
 	const { albums, fetchAlbums, isLoading } = useMusicStore();
 	const { signOut } = useClerk();
+	const { isAdmin } = useAuthStore();
 
 	useEffect(() => {
 		fetchAlbums();
@@ -52,6 +54,21 @@ const LeftSidebar = () => {
 							<MessageCircle className='size-5 sm:mr-2' />
 							<span className='hidden sm:inline'>Messages</span>
 						</Link>
+
+						{isAdmin && (
+							<Link
+								to={"/admin"}
+								className={cn(
+									buttonVariants({
+										variant: "ghost",
+										className: "w-full justify-center sm:justify-start text-white hover:bg-zinc-800 px-2 sm:px-4",
+									})
+								)}
+							>
+								<LayoutDashboardIcon className='size-5 sm:mr-2' />
+								<span className='hidden sm:inline'>Admin</span>
+							</Link>
+						)}
 					</SignedIn>
 				</div>
 			</div>
