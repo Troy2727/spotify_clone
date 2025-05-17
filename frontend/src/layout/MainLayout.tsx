@@ -21,17 +21,21 @@ const MainLayout = () => {
 
 	return (
 		<div className='h-screen bg-black text-white flex flex-col'>
-			<ResizablePanelGroup direction='horizontal' className='flex-1 flex h-full overflow-hidden p-2'>
+			<ResizablePanelGroup direction='horizontal' className='flex-1 flex h-full overflow-hidden p-1 sm:p-2'>
 				<AudioPlayer />
 				{/* left sidebar */}
-				<ResizablePanel defaultSize={20} minSize={isMobile ? 0 : 10} maxSize={30}>
+				<ResizablePanel
+					defaultSize={isMobile ? 15 : 20}
+					minSize={isMobile ? 0 : 10}
+					maxSize={isMobile ? 20 : 30}
+				>
 					<LeftSidebar />
 				</ResizablePanel>
 
-				<ResizableHandle className='w-2 bg-black rounded-lg transition-colors' />
+				<ResizableHandle className='w-1 sm:w-2 bg-black rounded-lg transition-colors' />
 
 				{/* Main content */}
-				<ResizablePanel defaultSize={isMobile ? 80 : 60}>
+				<ResizablePanel defaultSize={isMobile ? 85 : 60}>
 					<Outlet />
 				</ResizablePanel>
 

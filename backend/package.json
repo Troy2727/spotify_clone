@@ -33,6 +33,6 @@
 		"spotify-clone": "file:.."
 	},
 	"devDependencies": {
-		"nodemon": "^3.1.7"
+		"nodemon": "^3.1.10"
 	}
 }
