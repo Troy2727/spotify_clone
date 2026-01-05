@@ -4,7 +4,7 @@ import PlayButton from "./PlayButton";
 import { Button } from "@/components/ui/button";
 
 const FeaturedSection = () => {
-	const { isLoading, featuredSongs, albums, error } = useMusicStore();
+	const { isLoading, featuredSongs, error } = useMusicStore();
 
 	if (isLoading) return <FeaturedGridSkeleton />;
 
