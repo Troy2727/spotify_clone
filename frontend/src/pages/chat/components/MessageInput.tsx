@@ -40,13 +40,11 @@ const MessageInput = () => {
 			toast.error("Not connected to chat server. Please reconnect.");
 
 			// Try to reconnect
-			if (user) {
-				try {
-					initSocket(user.id);
-					toast.success("Reconnected to chat server");
-				} catch (error) {
-					console.error("Error reconnecting:", error);
-				}
+			try {
+				initSocket(user.id);
+				toast.success("Reconnected to chat server");
+			} catch (error) {
+				console.error("Error reconnecting:", error);
 			}
 			return;
 		}

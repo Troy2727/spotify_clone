@@ -1,10 +1,5 @@
 import axios from "axios";
 
-// Check if we're in Vercel production environment
-const isVercelProduction = () => {
-	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
-};
-
 // Use environment variable or default to relative path for production
 const apiBaseUrl = import.meta.env.VITE_API_URL || "/api";
 
