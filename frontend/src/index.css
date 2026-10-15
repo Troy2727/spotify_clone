@@ -67,3 +67,26 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* Now-playing equalizer bars (album track list) */
+@keyframes equalize {
+	0%,
+	100% {
+		transform: scaleY(0.3);
+	}
+	50% {
+		transform: scaleY(1);
+	}
+}
+
+.equalizer-bar {
+	transform-origin: bottom;
+	animation: equalize 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.equalizer-bar {
+		animation: none;
+		transform: scaleY(0.6);
+	}
+}

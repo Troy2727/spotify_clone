@@ -1,5 +1,5 @@
 import Topbar from "@/components/Topbar";
-import { useChatStore } from "@/stores/useChatStore";
+import { isVercelProduction, useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState, useCallback } from "react";
 import UsersList from "./components/UsersList";
@@ -40,7 +40,7 @@ const ChatPage = () => {
 			setTimeout(() => {
 				initSocket(user.id);
 				setSocketInitialized(true);
-				toast.success("Connected to chat server");
+				toast.success(isVercelProduction() ? "Demo chat ready" : "Connected to chat server");
 				setIsConnecting(false);
 			}, 500); // Small delay to ensure disconnect completes
 		} catch (error) {
@@ -88,7 +88,11 @@ const ChatPage = () => {
 				<div className='flex items-center gap-2'>
 					<div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
 					<span className='text-xs text-zinc-400'>
-						{isConnected ? 'Connected to chat' : 'Disconnected'}
+						{isConnected
+							? isVercelProduction()
+								? 'Demo chat · friends are simulated'
+								: 'Connected to chat'
+							: 'Disconnected'}
 					</span>
 					{!isConnected && (
 						<Button
