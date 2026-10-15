@@ -9,6 +9,7 @@
     { "source": "/api/songs/featured", "destination": "/api/songs/featured" },
     { "source": "/api/songs/made-for-you", "destination": "/api/songs/made-for-you" },
     { "source": "/api/albums", "destination": "/api/albums" },
+    { "source": "/api/albums/:albumId", "destination": "/api/albums/[albumId]" },
     { "source": "/api/users", "destination": "/api/users" },
     { "source": "/api/users/messages/:userId", "destination": "/api/users/messages/[userId]" },
     { "source": "/api/(.*)", "destination": "/api" },
