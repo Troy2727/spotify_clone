@@ -5,9 +5,12 @@ import FriendsActivity from "./components/FriendsActivity";
 import AudioPlayer from "./components/AudioPlayer";
 import { PlaybackControls } from "./components/PlaybackControls";
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/clerk-react";
 
 const MainLayout = () => {
 	const [isMobile, setIsMobile] = useState(false);
+	const { isSignedIn } = useUser();
+	const showFriends = !isMobile && isSignedIn;
 
 	useEffect(() => {
 		const checkMobile = () => {
@@ -25,6 +28,8 @@ const MainLayout = () => {
 				<AudioPlayer />
 				{/* left sidebar */}
 				<ResizablePanel
+					id='left-sidebar'
+					order={1}
 					defaultSize={isMobile ? 15 : 20}
 					minSize={isMobile ? 0 : 10}
 					maxSize={isMobile ? 20 : 30}
@@ -35,16 +40,16 @@ const MainLayout = () => {
 				<ResizableHandle className='w-1 sm:w-2 bg-black rounded-lg transition-colors' />
 
 				{/* Main content */}
-				<ResizablePanel defaultSize={isMobile ? 85 : 60}>
+				<ResizablePanel id='main-content' order={2} defaultSize={isMobile ? 85 : showFriends ? 60 : 80}>
 					<Outlet />
 				</ResizablePanel>
 
-				{!isMobile && (
+				{showFriends && (
 					<>
 						<ResizableHandle className='w-2 bg-black rounded-lg transition-colors' />
 
 						{/* right sidebar */}
-						<ResizablePanel defaultSize={20} minSize={0} maxSize={25} collapsedSize={0}>
+						<ResizablePanel id='friends-activity' order={3} defaultSize={20} minSize={0} maxSize={25} collapsedSize={0}>
 							<FriendsActivity />
 						</ResizablePanel>
 					</>
