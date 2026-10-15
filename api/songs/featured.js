@@ -5,9 +5,9 @@ export default function handler(req, res) {
   const featuredSongs = [
     {
       _id: "featured1",
-      title: "Stay With Me",
-      artist: "Sarah Mitchell",
-      imageUrl: "/cover-images/1.jpg",
+      title: "Believer",
+      artist: "Imagine Dragons",
+      imageUrl: "/cover-images/17.jpg",
       audioUrl: "/songs/1.mp3",
       duration: 180,
       createdAt: new Date().toISOString(),
@@ -15,8 +15,8 @@ export default function handler(req, res) {
     },
     {
       _id: "featured2",
-      title: "Urban Jungle",
-      artist: "City Lights",
+      title: "Burn",
+      artist: "Usher",
       imageUrl: "/cover-images/15.jpg",
       audioUrl: "/songs/2.mp3",
       duration: 210,
@@ -25,8 +25,8 @@ export default function handler(req, res) {
     },
     {
       _id: "featured3",
-      title: "Lost in Tokyo",
-      artist: "Electric Dreams",
+      title: "Uprising",
+      artist: "Muse",
       imageUrl: "/cover-images/3.jpg",
       audioUrl: "/songs/3.mp3",
       duration: 195,
@@ -35,8 +35,8 @@ export default function handler(req, res) {
     },
     {
       _id: "featured4",
-      title: "Neon Tokyo",
-      artist: "Future Pulse",
+      title: "New Americana",
+      artist: "Halsey",
       imageUrl: "/cover-images/5.jpg",
       audioUrl: "/songs/4.mp3",
       duration: 225,
@@ -45,8 +45,8 @@ export default function handler(req, res) {
     },
     {
       _id: "featured5",
-      title: "Moonlight Dance",
-      artist: "Silver Shadows",
+      title: "Dancing Queen",
+      artist: "ABBA",
       imageUrl: "/cover-images/14.jpg",
       audioUrl: "/songs/5.mp3",
       duration: 240,
@@ -55,8 +55,8 @@ export default function handler(req, res) {
     },
     {
       _id: "featured6",
-      title: "Crystal Rain",
-      artist: "Echo Valley",
+      title: "Venom",
+      artist: "Eminem",
       imageUrl: "/cover-images/9.jpg",
       audioUrl: "/songs/6.mp3",
       duration: 200,

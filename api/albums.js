@@ -5,15 +5,15 @@ export default function handler(req, res) {
   const albums = [
     {
       _id: "album1",
-      title: "Urban Nights",
-      artist: "Various Artists",
+      title: "Confessions",
+      artist: "Usher",
       imageUrl: "/cover-images/15.jpg",
-      releaseYear: 2023,
+      releaseYear: 2004,
       songs: [
         {
           _id: "song1",
-          title: "Urban Nights",
-          artist: "Various Artists",
+          title: "Caught Up",
+          artist: "Usher",
           imageUrl: "/cover-images/15.jpg",
           audioUrl: "/songs/1.mp3",
           duration: 240,
@@ -22,8 +22,8 @@ export default function handler(req, res) {
         },
         {
           _id: "song2",
-          title: "City Lights",
-          artist: "Various Artists",
+          title: "Confessions Part II",
+          artist: "Usher",
           imageUrl: "/cover-images/15.jpg",
           audioUrl: "/songs/2.mp3",
           duration: 195,
@@ -34,15 +34,15 @@ export default function handler(req, res) {
     },
     {
       _id: "album2",
-      title: "Coastal Dreaming",
-      artist: "Various Artists",
+      title: "Kamikaze",
+      artist: "Eminem",
       imageUrl: "/cover-images/9.jpg",
-      releaseYear: 2022,
+      releaseYear: 2018,
       songs: [
         {
           _id: "song3",
-          title: "Ocean Breeze",
-          artist: "Various Artists",
+          title: "The Ringer",
+          artist: "Eminem",
           imageUrl: "/cover-images/9.jpg",
           audioUrl: "/songs/3.mp3",
           duration: 210,
@@ -51,8 +51,8 @@ export default function handler(req, res) {
         },
         {
           _id: "song4",
-          title: "Sunset Dreams",
-          artist: "Various Artists",
+          title: "Fall",
+          artist: "Eminem",
           imageUrl: "/cover-images/9.jpg",
           audioUrl: "/songs/4.mp3",
           duration: 225,
@@ -63,15 +63,15 @@ export default function handler(req, res) {
     },
     {
       _id: "album3",
-      title: "Midnight Sessions",
-      artist: "Various Artists",
+      title: "Illuminate",
+      artist: "Shawn Mendes",
       imageUrl: "/cover-images/10.jpg",
-      releaseYear: 2023,
+      releaseYear: 2016,
       songs: [
         {
           _id: "song5",
-          title: "Midnight Drive",
-          artist: "Various Artists",
+          title: "Mercy",
+          artist: "Shawn Mendes",
           imageUrl: "/cover-images/10.jpg",
           audioUrl: "/songs/5.mp3",
           duration: 240,
@@ -80,8 +80,8 @@ export default function handler(req, res) {
         },
         {
           _id: "song6",
-          title: "Neon City",
-          artist: "Various Artists",
+          title: "Ruin",
+          artist: "Shawn Mendes",
           imageUrl: "/cover-images/10.jpg",
           audioUrl: "/songs/6.mp3",
           duration: 200,
@@ -92,15 +92,15 @@ export default function handler(req, res) {
     },
     {
       _id: "album4",
-      title: "Eastern Dreams",
-      artist: "Various Artists",
+      title: "The Resistance",
+      artist: "Muse",
       imageUrl: "/cover-images/3.jpg",
-      releaseYear: 2021,
+      releaseYear: 2009,
       songs: [
         {
           _id: "song7",
-          title: "Eastern Winds",
-          artist: "Various Artists",
+          title: "Resistance",
+          artist: "Muse",
           imageUrl: "/cover-images/3.jpg",
           audioUrl: "/songs/7.mp3",
           duration: 230,
@@ -109,8 +109,8 @@ export default function handler(req, res) {
         },
         {
           _id: "song8",
-          title: "Tokyo Nights",
-          artist: "Various Artists",
+          title: "Undisclosed Desires",
+          artist: "Muse",
           imageUrl: "/cover-images/3.jpg",
           audioUrl: "/songs/8.mp3",
           duration: 215,

@@ -5,8 +5,8 @@ export default function handler(req, res) {
   const trendingSongs = [
     {
       _id: "trending1",
-      title: "Midnight Drive",
-      artist: "The Weekenders",
+      title: "Treat You Better",
+      artist: "Shawn Mendes",
       imageUrl: "/cover-images/10.jpg",
       audioUrl: "/songs/1.mp3",
       duration: 240,
@@ -15,8 +15,8 @@ export default function handler(req, res) {
     },
     {
       _id: "trending2",
-      title: "Starlight",
-      artist: "Luna Ray",
+      title: "Happier Than Ever",
+      artist: "Billie Eilish",
       imageUrl: "/cover-images/11.jpg",
       audioUrl: "/songs/2.mp3",
       duration: 195,
@@ -25,8 +25,8 @@ export default function handler(req, res) {
     },
     {
       _id: "trending3",
-      title: "City Rain",
-      artist: "Urban Lofi",
+      title: "The Hills",
+      artist: "The Weeknd",
       imageUrl: "/cover-images/12.jpg",
       audioUrl: "/songs/3.mp3",
       duration: 210,
@@ -35,8 +35,8 @@ export default function handler(req, res) {
     },
     {
       _id: "trending4",
-      title: "Neon Lights",
-      artist: "Night Express",
+      title: "The Best",
+      artist: "AWOLNATION",
       imageUrl: "/cover-images/13.jpg",
       audioUrl: "/songs/4.mp3",
       duration: 225,
