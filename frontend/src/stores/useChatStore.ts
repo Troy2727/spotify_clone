@@ -2,6 +2,7 @@ import { axiosInstance } from "@/lib/axios";
 import { Message, User } from "@/types";
 import { create } from "zustand";
 import { io } from "socket.io-client";
+import { DEMO_ACTIVITIES, DEMO_FRIENDS, DEMO_ONLINE, addDemoMessage, getDemoConversation, nextDemoReply } from "@/lib/demoChat";
 
 // Use environment variable or default to window location for production
 const getBaseURL = () => {
@@ -20,7 +21,7 @@ const getBaseURL = () => {
 };
 
 // Check if we're in Vercel production environment
-const isVercelProduction = () => {
+export const isVercelProduction = () => {
 	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
 };
 
@@ -42,6 +43,9 @@ interface ChatStore {
 	fetchMessages: (userId: string) => Promise<void>;
 	setSelectedUser: (user: User | null) => void;
 }
+
+// Signed-in user's Clerk id, so demo conversations know which side "you" are on
+let demoSelfId = "";
 
 // Initialize socket with dynamic configuration, but only if not in Vercel production
 let socket;
@@ -113,21 +117,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		// If we're in Vercel production, use mock users
 		if (isVercelProduction()) {
 			console.log("Running in Vercel production - using mock users");
-			const mockUsers = [
-				{
-					_id: "user1",
-					clerkId: "test_user_1",
-					fullName: "Test User",
-					imageUrl: "/cover-images/1.jpg"
-				},
-				{
-					_id: "user2",
-					clerkId: "test_user_2",
-					fullName: "Another Test User",
-					imageUrl: "/cover-images/2.jpg"
-				}
-			];
-			set({ users: mockUsers });
+			set({ users: DEMO_FRIENDS });
 			set({ isLoading: false });
 			return;
 		}
@@ -143,21 +133,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 				set({ error: error.response?.data?.message || "Failed to fetch users" });
 			}
 			// Use mock users on error
-			const fallbackUsers = [
-				{
-					_id: "user1",
-					clerkId: "test_user_1",
-					fullName: "Test User",
-					imageUrl: "/cover-images/1.jpg"
-				},
-				{
-					_id: "user2",
-					clerkId: "test_user_2",
-					fullName: "Another Test User",
-					imageUrl: "/cover-images/2.jpg"
-				}
-			];
-			set({ users: fallbackUsers });
+			set({ users: DEMO_FRIENDS });
 		} finally {
 			set({ isLoading: false });
 		}
@@ -169,10 +145,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		// If we're in Vercel production, don't actually connect
 		if (isVercelProduction()) {
 			console.log("Running in Vercel production - skipping socket connection");
-			// Set mock online users for better UI experience
+			demoSelfId = userId;
+			// Set mock online users and listening activity for better UI experience
 			set({
 				isConnected: true,
-				onlineUsers: new Set(['test_user_1', 'test_user_2'])
+				onlineUsers: DEMO_ONLINE,
+				userActivities: DEMO_ACTIVITIES
 			});
 			return;
 		}
@@ -352,19 +330,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		// If we're in Vercel production, create a mock message instead of using socket
 		if (isVercelProduction()) {
 			console.log("Running in Vercel production - creating mock message");
-			const mockMessage: Message = {
-				_id: `mock_${Date.now()}`,
-				senderId,
-				receiverId,
-				content,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString()
-			};
-
-			// Add the message to the state
+			const mockMessage = addDemoMessage(receiverId, senderId, receiverId, content);
 			set((state) => ({
 				messages: [...state.messages, mockMessage]
 			}));
+
+			// The simulated friend replies shortly after
+			setTimeout(() => {
+				const reply = addDemoMessage(receiverId, receiverId, senderId, nextDemoReply());
+				if (get().selectedUser?.clerkId === receiverId) {
+					set((state) => ({ messages: [...state.messages, reply] }));
+				}
+			}, 1500);
 
 			return;
 		}
@@ -390,33 +367,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		// If we're in Vercel production, use mock messages
 		if (isVercelProduction()) {
 			console.log("Running in Vercel production - using mock messages");
-			const mockMessages = [
-				{
-					_id: "mock1",
-					senderId: "user_2x74anfpqe1ITRS49EiPbTS6jaE",
-					receiverId: userId,
-					content: "Hey there! How are you?",
-					createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-					updatedAt: new Date(Date.now() - 3600000).toISOString()
-				},
-				{
-					_id: "mock2",
-					senderId: userId,
-					receiverId: "user_2x74anfpqe1ITRS49EiPbTS6jaE",
-					content: "I'm doing great! How about you?",
-					createdAt: new Date(Date.now() - 3500000).toISOString(), // 58 minutes ago
-					updatedAt: new Date(Date.now() - 3500000).toISOString()
-				},
-				{
-					_id: "mock3",
-					senderId: "user_2x74anfpqe1ITRS49EiPbTS6jaE",
-					receiverId: userId,
-					content: "Just listening to some music on Spotify Clone!",
-					createdAt: new Date(Date.now() - 3400000).toISOString(), // 56 minutes ago
-					updatedAt: new Date(Date.now() - 3400000).toISOString()
-				}
-			];
-			set({ messages: mockMessages });
+			set({ messages: getDemoConversation(userId, demoSelfId) });
 			set({ isLoading: false });
 			return;
 		}
