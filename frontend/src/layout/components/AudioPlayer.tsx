@@ -45,6 +45,7 @@ const AudioPlayer = () => {
 		}
 	}, [currentSong, isPlaying]);
 
-	return <audio ref={audioRef} />;
+	// crossOrigin lets the waveform analyser read songs served from other origins (e.g. Cloudinary)
+	return <audio ref={audioRef} crossOrigin='anonymous' />;
 };
 export default AudioPlayer;
