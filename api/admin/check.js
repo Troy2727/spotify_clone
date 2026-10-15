@@ -1,20 +1,13 @@
-// Mock API handler for admin check in Vercel
+// Admin check for Vercel: verifies the Clerk session and applies the backend's admin rule
 
-export default function handler(req, res) {
-  // Get the authorization header
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ 
-      message: 'Unauthorized - missing or invalid token',
-      admin: false 
-    });
+import { checkAdmin } from '../_lib/clerkAdmin.js';
+
+export default async function handler(req, res) {
+  try {
+    const { status, admin, message } = await checkAdmin(req);
+    return res.status(status).json({ admin, message });
+  } catch (error) {
+    console.error('Admin check failed:', error.message);
+    return res.status(500).json({ admin: false, message: 'Could not verify admin status' });
   }
-
-  // In a real implementation, you would verify the token
-  // For now, we'll just return admin: true for all authenticated requests
-  return res.status(200).json({ 
-    admin: true,
-    message: 'Admin check successful (mock response)'
-  });
 }

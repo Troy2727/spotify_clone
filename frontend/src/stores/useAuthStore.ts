@@ -1,11 +1,6 @@
 import { axiosInstance } from "@/lib/axios";
 import { create } from "zustand";
 
-// Check if we're in Vercel production environment
-const isVercelProduction = () => {
-	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
-};
-
 interface AuthStore {
 	isAdmin: boolean;
 	isLoading: boolean;
@@ -23,14 +18,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
 	checkAdminStatus: async () => {
 		set({ isLoading: true, error: null });
 		console.log("Checking admin status...");
-
-		// For Vercel demo environment, set admin to true
-		if (isVercelProduction()) {
-			console.log("In Vercel production environment, setting admin to true for demo purposes");
-			set({ isAdmin: true });
-			set({ isLoading: false });
-			return;
-		}
 
 		try {
 			const response = await axiosInstance.get("/admin/check");
