@@ -3,6 +3,7 @@ import { Slider } from "@/components/ui/slider";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import Waveform from "./Waveform";
 
 const formatTime = (seconds: number) => {
 	const minutes = Math.floor(seconds / 60);
@@ -50,7 +51,7 @@ export const PlaybackControls = () => {
 	};
 
 	return (
-		<footer className='h-20 sm:h-24 bg-zinc-900 border-t border-zinc-800 px-4'>
+		<footer className='h-20 sm:h-24 bg-black/45 border-t border-white/[0.06] px-4'>
 			<div className='flex justify-between items-center h-full max-w-[1800px] mx-auto'>
 				{/* currently playing song */}
 				<div className='flex items-center gap-4 min-w-[180px] w-[30%]'>
@@ -68,6 +69,9 @@ export const PlaybackControls = () => {
 								<div className='text-sm text-zinc-400 truncate hover:underline cursor-pointer'>
 									{currentSong.artist}
 								</div>
+							</div>
+							<div className='hidden md:block'>
+								<Waveform />
 							</div>
 						</>
 					)}
