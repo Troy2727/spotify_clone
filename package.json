@@ -30,7 +30,7 @@
 		"mongodb"
 	],
 	"author": "",
-	"license": "ISC",
+	"license": "MIT",
 	"devDependencies": {
 		"concurrently": "^8.2.2"
 	}
