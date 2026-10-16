@@ -27,7 +27,7 @@
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-screenshots">Screenshots</a> •
-  <a href="#-architecture">Architecture</a> •
+  <a href="#️-architecture">Architecture</a> •
   <a href="#-getting-started">Getting started</a> •
   <a href="#-deployment">Deployment</a> •
   <a href="#-project-structure">Structure</a> •
