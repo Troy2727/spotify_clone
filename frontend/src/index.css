@@ -69,25 +69,51 @@
 }
 
 @layer components {
-	/* Translucent panel over the ambient background (no backdrop-filter: the backdrop is already blurred) */
+	/* Translucent panel over the ambient background (no backdrop-filter: the backdrop is already soft) */
 	.glass-panel {
 		@apply border border-white/[0.06] bg-zinc-900/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)];
 	}
 }
 
-/* Ambient background: each new cover fades in over the previous one */
-@keyframes ambient-in {
+/* Current song's dominant color (set by AmbientBackground). Registered so changes animate. */
+@property --ambient {
+	syntax: "<color>";
+	inherits: true;
+	initial-value: #1f2a24;
+}
+
+:root {
+	transition: --ambient 1.2s ease;
+}
+
+/* Ambient background: soft pools of the song's color that slowly drift */
+.ambient-glow {
+	background:
+		radial-gradient(45% 55% at 20% 10%, var(--ambient), transparent 70%),
+		radial-gradient(45% 55% at 85% 20%, color-mix(in srgb, var(--ambient) 75%, transparent), transparent 70%),
+		radial-gradient(55% 50% at 55% 100%, color-mix(in srgb, var(--ambient) 55%, transparent), transparent 70%);
+	animation: ambient-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
 	from {
-		opacity: 0;
+		transform: translate3d(-3%, -2%, 0) scale(1);
+	}
+	to {
+		transform: translate3d(3%, 2%, 0) scale(1.08);
 	}
 }
 
-.ambient-layer {
-	animation: ambient-in 1.2s ease-out;
+/* Spotify-style color band at the top of the home page */
+.ambient-band {
+	background: linear-gradient(to bottom, color-mix(in srgb, var(--ambient) 85%, transparent), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.ambient-layer {
+	:root {
+		transition: none;
+	}
+	.ambient-glow {
 		animation: none;
 	}
 }
