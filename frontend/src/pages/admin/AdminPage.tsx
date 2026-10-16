@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AmbientBackground from "@/layout/components/AmbientBackground";
 import AudioPlayer from "@/layout/components/AudioPlayer";
 import { PlaybackControls } from "@/layout/components/PlaybackControls";
+import { userButtonAppearance } from "@/lib/clerkAppearance";
 import { isDemoMode } from "@/lib/demoMode";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useMusicStore } from "@/stores/useMusicStore";
@@ -114,7 +115,7 @@ const AdminPage = () => {
 									Demo mode<span className='hidden sm:inline'> · changes reset on reload</span>
 								</span>
 							)}
-							<UserButton />
+							<UserButton appearance={userButtonAppearance} />
 						</div>
 					</header>
 
