@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import SignInOAuthButtons from "./SignInOAuthButtons";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
+import { userButtonAppearance } from "@/lib/clerkAppearance";
 import { buttonVariants } from "./ui/button";
 
 const Topbar = () => {
@@ -52,7 +53,7 @@ const Topbar = () => {
 					</div>
 				</SignedOut>
 
-				<UserButton />
+				<UserButton appearance={userButtonAppearance} />
 			</div>
 		</div>
 	);
