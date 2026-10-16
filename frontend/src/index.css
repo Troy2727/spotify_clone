@@ -75,23 +75,19 @@
 	}
 }
 
-/* Current song's dominant color (set by AmbientBackground). Registered so changes animate. */
-@property --ambient {
-	syntax: "<color>";
-	inherits: true;
-	initial-value: #1f2a24;
-}
-
+/* "Midnight" theme colors for the ambient background */
 :root {
-	transition: --ambient 1.2s ease;
+	--midnight-indigo: rgb(55 48 163);
+	--midnight-blue: rgb(30 64 175);
+	--midnight-teal: rgb(14 116 144);
 }
 
-/* Ambient background: soft pools of the song's color that slowly drift */
+/* Ambient background: soft pools of the theme colors that slowly drift */
 .ambient-glow {
 	background:
-		radial-gradient(45% 55% at 20% 10%, var(--ambient), transparent 70%),
-		radial-gradient(45% 55% at 85% 20%, color-mix(in srgb, var(--ambient) 75%, transparent), transparent 70%),
-		radial-gradient(55% 50% at 55% 100%, color-mix(in srgb, var(--ambient) 55%, transparent), transparent 70%);
+		radial-gradient(45% 55% at 20% 10%, var(--midnight-indigo), transparent 70%),
+		radial-gradient(45% 55% at 85% 20%, var(--midnight-blue), transparent 70%),
+		radial-gradient(55% 50% at 55% 100%, var(--midnight-teal), transparent 70%);
 	animation: ambient-drift 40s ease-in-out infinite alternate;
 }
 
@@ -106,13 +102,10 @@
 
 /* Spotify-style color band at the top of the home page */
 .ambient-band {
-	background: linear-gradient(to bottom, color-mix(in srgb, var(--ambient) 85%, transparent), transparent);
+	background: linear-gradient(to bottom, color-mix(in srgb, var(--midnight-indigo) 85%, transparent), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	:root {
-		transition: none;
-	}
 	.ambient-glow {
 		animation: none;
 	}
