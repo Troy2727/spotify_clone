@@ -1,28 +1,27 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Library } from "lucide-react";
-import AlbumsTable from "./AlbumsTable";
+import { useMusicStore } from "@/stores/useMusicStore";
+import { useState } from "react";
 import AddAlbumDialog from "./AddAlbumDialog";
+import AlbumsGrid from "./AlbumsGrid";
+import SearchInput from "./SearchInput";
 
 const AlbumsTabContent = () => {
-	return (
-		<Card className='bg-zinc-800/50 border-zinc-700/50'>
-			<CardHeader>
-				<div className='flex items-center justify-between'>
-					<div>
-						<CardTitle className='flex items-center gap-2'>
-							<Library className='h-5 w-5 text-violet-500' />
-							Albums Library
-						</CardTitle>
-						<CardDescription>Manage your album collection</CardDescription>
-					</div>
-					<AddAlbumDialog />
-				</div>
-			</CardHeader>
+	const { albums } = useMusicStore();
+	const [query, setQuery] = useState("");
 
-			<CardContent>
-				<AlbumsTable />
-			</CardContent>
-		</Card>
+	const q = query.trim().toLowerCase();
+	const filtered = q ? albums.filter((album) => `${album.title} ${album.artist}`.toLowerCase().includes(q)) : albums;
+
+	return (
+		<section aria-label='Albums' className='space-y-4'>
+			<div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+				<SearchInput value={query} onChange={setQuery} label='Search albums' placeholder='Search albums or artists' />
+				<p className='text-sm text-zinc-400 sm:ml-auto' aria-live='polite'>
+					{filtered.length} of {albums.length} albums
+				</p>
+				<AddAlbumDialog />
+			</div>
+			<AlbumsGrid albums={filtered} isFiltered={q.length > 0} />
+		</section>
 	);
 };
 export default AlbumsTabContent;
