@@ -80,7 +80,7 @@ const ChatPage = () => {
 	console.log("ChatPage: Current user:", user);
 
 	return (
-		<main className='h-full rounded-lg bg-gradient-to-b from-zinc-800 to-zinc-900 overflow-hidden'>
+		<main className='h-full rounded-lg glass-panel overflow-hidden'>
 			<Topbar />
 
 			{/* Connection status indicator */}

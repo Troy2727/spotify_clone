@@ -68,6 +68,30 @@
 	}
 }
 
+@layer components {
+	/* Translucent panel over the ambient background (no backdrop-filter: the backdrop is already blurred) */
+	.glass-panel {
+		@apply border border-white/[0.06] bg-zinc-900/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)];
+	}
+}
+
+/* Ambient background: each new cover fades in over the previous one */
+@keyframes ambient-in {
+	from {
+		opacity: 0;
+	}
+}
+
+.ambient-layer {
+	animation: ambient-in 1.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ambient-layer {
+		animation: none;
+	}
+}
+
 /* Now-playing equalizer bars (album track list) */
 @keyframes equalize {
 	0%,

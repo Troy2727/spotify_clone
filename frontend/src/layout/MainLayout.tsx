@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import LeftSidebar from "./components/LeftSidebar";
 import FriendsActivity from "./components/FriendsActivity";
 import AudioPlayer from "./components/AudioPlayer";
+import AmbientBackground from "./components/AmbientBackground";
 import { PlaybackControls } from "./components/PlaybackControls";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
@@ -23,7 +24,8 @@ const MainLayout = () => {
 	}, []);
 
 	return (
-		<div className='h-screen bg-black text-white flex flex-col'>
+		<div className='relative isolate h-screen bg-black text-white flex flex-col'>
+			<AmbientBackground />
 			<ResizablePanelGroup direction='horizontal' className='flex-1 flex h-full overflow-hidden p-1 sm:p-2'>
 				<AudioPlayer />
 				{/* left sidebar */}
@@ -37,7 +39,7 @@ const MainLayout = () => {
 					<LeftSidebar />
 				</ResizablePanel>
 
-				<ResizableHandle className='w-1 sm:w-2 bg-black rounded-lg transition-colors' />
+				<ResizableHandle className='w-1 sm:w-2 bg-transparent rounded-lg transition-colors' />
 
 				{/* Main content */}
 				<ResizablePanel id='main-content' order={2} defaultSize={isMobile ? 85 : showFriends ? 60 : 80}>
@@ -46,7 +48,7 @@ const MainLayout = () => {
 
 				{showFriends && (
 					<>
-						<ResizableHandle className='w-2 bg-black rounded-lg transition-colors' />
+						<ResizableHandle className='w-2 bg-transparent rounded-lg transition-colors' />
 
 						{/* right sidebar */}
 						<ResizablePanel id='friends-activity' order={3} defaultSize={20} minSize={0} maxSize={25} collapsedSize={0}>

@@ -64,9 +64,12 @@ const AlbumPage = () => {
 	return (
 		<div className='h-full'>
 			<ScrollArea className='h-full rounded-md'>
-				<div className='relative min-h-full overflow-hidden bg-zinc-900'>
-					{/* backdrop: the album's own cover, blurred, fading into the page (clipped so the blur can't bleed past the fade) */}
-					<div className='pointer-events-none absolute inset-x-0 top-0 h-[440px] overflow-hidden' aria-hidden='true'>
+				<div className='relative min-h-full overflow-hidden rounded-md glass-panel'>
+					{/* backdrop: the album's own cover, blurred, masked so it fades into the glass panel (clipped so the blur can't bleed past the fade) */}
+					<div
+						className='pointer-events-none absolute inset-x-0 top-0 h-[440px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_35%,transparent)]'
+						aria-hidden='true'
+					>
 						{currentAlbum?.imageUrl && (
 							<img
 								src={currentAlbum.imageUrl}
@@ -74,7 +77,7 @@ const AlbumPage = () => {
 								className='size-full scale-125 object-cover opacity-70 blur-3xl'
 							/>
 						)}
-						<div className='absolute inset-0 bg-gradient-to-b from-black/10 via-zinc-900/60 to-zinc-900' />
+						<div className='absolute inset-0 bg-black/20' />
 					</div>
 
 					<div className='relative z-10'>
