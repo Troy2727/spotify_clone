@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { axiosInstance } from "@/lib/axios";
 import { isDemoMode } from "@/lib/demoMode";
+import { previewUrl } from "@/lib/filePreview";
 import { formatDuration } from "@/pages/album/AlbumPage";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { ImagePlus, Music2, Plus } from "lucide-react";
@@ -34,8 +35,9 @@ const AddSongDialog = () => {
 
 	const selectFile = (kind: "audio" | "image", file: File | undefined) => {
 		if (!file) return;
+		const url = previewUrl(file, kind);
+		if (!url) return void toast.error(`Please choose an ${kind} file`);
 		if (previews[kind]) URL.revokeObjectURL(previews[kind]);
-		const url = URL.createObjectURL(file);
 		setFiles((prev) => ({ ...prev, [kind]: file }));
 		setPreviews((prev) => ({ ...prev, [kind]: url }));
 
