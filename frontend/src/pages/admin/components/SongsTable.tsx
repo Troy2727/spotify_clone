@@ -1,95 +1,90 @@
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDuration } from "@/pages/album/AlbumPage";
 import { useMusicStore } from "@/stores/useMusicStore";
-import { usePlayerStore } from "@/stores/usePlayerStore";
-import { Calendar, Play, Pause, Trash2 } from "lucide-react";
+import { Song } from "@/types";
+import { Clock, Music } from "lucide-react";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
+import CoverPlayButton from "./CoverPlayButton";
 
-const SongsTable = () => {
-	const { songs, isLoading, error, deleteSong } = useMusicStore();
-	const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
+const SongsTable = ({ songs, isFiltered }: { songs: Song[]; isFiltered: boolean }) => {
+	const { albums, isLoading, error, deleteSong } = useMusicStore();
 
-	if (isLoading) {
+	if (isLoading && songs.length === 0 && !isFiltered) {
 		return (
-			<div className='flex items-center justify-center py-8'>
-				<div className='text-zinc-400'>Loading songs...</div>
+			<div className='space-y-2' aria-label='Loading songs'>
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div key={i} className='h-14 animate-pulse rounded-lg bg-white/5' />
+				))}
 			</div>
 		);
 	}
 
-	if (error) {
+	if (error && songs.length === 0 && !isFiltered) {
 		return (
-			<div className='flex items-center justify-center py-8'>
-				<div className='text-red-400'>{error}</div>
+			<div role='alert' className='rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-sm text-red-300'>
+				Couldn't load songs: {error}
 			</div>
 		);
 	}
+
+	if (songs.length === 0) {
+		return (
+			<div className='flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 py-12 text-center'>
+				<Music className='size-8 text-zinc-500' aria-hidden='true' />
+				<p className='font-medium'>{isFiltered ? "No songs match your search" : "No songs yet"}</p>
+				<p className='text-sm text-zinc-400'>{isFiltered ? "Try a different title or artist." : "Add your first song to get started."}</p>
+			</div>
+		);
+	}
+
+	const albumTitle = (albumId: string | null) => albums.find((album) => album._id === albumId)?.title ?? "Single";
 
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow className='hover:bg-zinc-800/50'>
-					<TableHead className='w-[50px]'></TableHead>
-					<TableHead>Title</TableHead>
-					<TableHead>Artist</TableHead>
-					<TableHead>Release Date</TableHead>
-					<TableHead className='text-right'>Actions</TableHead>
-				</TableRow>
-			</TableHeader>
-
-			<TableBody>
-				{songs.map((song) => {
-					const isCurrentSong = currentSong?._id === song._id;
-
-					return (
-						<TableRow key={song._id} className='hover:bg-zinc-800/50'>
+		<div className='overflow-hidden rounded-xl border border-white/[0.06]'>
+			<Table>
+				<TableHeader>
+					<TableRow className='border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.03]'>
+						<TableHead className='w-10 text-right text-zinc-400'>#</TableHead>
+						<TableHead className='text-zinc-400'>Title</TableHead>
+						<TableHead className='hidden text-zinc-400 sm:table-cell'>Album</TableHead>
+						<TableHead className='hidden w-20 text-right text-zinc-400 md:table-cell'>
+							<Clock className='ml-auto size-4' aria-hidden='true' />
+							<span className='sr-only'>Duration</span>
+						</TableHead>
+						<TableHead className='w-14'>
+							<span className='sr-only'>Actions</span>
+						</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{songs.map((song, index) => (
+						<TableRow key={song._id} className='border-white/[0.06] hover:bg-white/5'>
+							<TableCell className='text-right tabular-nums text-zinc-400'>{index + 1}</TableCell>
 							<TableCell>
-								<div className="relative group">
-									<img src={song.imageUrl} alt={song.title} className='size-10 rounded object-cover' />
-									<Button
-										size={"icon"}
-										onClick={() => {
-											if (isCurrentSong) {
-												togglePlay();
-											} else {
-												setCurrentSong(song);
-											}
-										}}
-										className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded transition-opacity'
-									>
-										{isCurrentSong && isPlaying ? (
-											<Pause className='size-5 text-white' />
-										) : (
-											<Play className='size-5 text-white' />
-										)}
-									</Button>
+								<div className='flex items-center gap-3'>
+									<CoverPlayButton song={song} className='size-10' />
+									<div className='min-w-0'>
+										<p className='truncate font-medium'>{song.title}</p>
+										<p className='truncate text-sm text-zinc-400'>{song.artist}</p>
+									</div>
 								</div>
 							</TableCell>
-							<TableCell className='font-medium'>{song.title}</TableCell>
-							<TableCell>{song.artist}</TableCell>
-							<TableCell>
-								<span className='inline-flex items-center gap-1 text-zinc-400'>
-									<Calendar className='h-4 w-4' />
-									{song.createdAt.split("T")[0]}
-								</span>
+							<TableCell className='hidden text-zinc-300 sm:table-cell'>{albumTitle(song.albumId)}</TableCell>
+							<TableCell className='hidden text-right tabular-nums text-zinc-400 md:table-cell'>
+								{formatDuration(song.duration)}
 							</TableCell>
-
 							<TableCell className='text-right'>
-								<div className='flex gap-2 justify-end'>
-									<Button
-										variant={"ghost"}
-										size={"sm"}
-										className='text-red-400 hover:text-red-300 hover:bg-red-400/10'
-										onClick={() => deleteSong(song._id)}
-									>
-										<Trash2 className='size-4' />
-									</Button>
-								</div>
+								<ConfirmDeleteDialog
+									name={song.title}
+									description={`This removes “${song.title}” by ${song.artist} from the catalog.`}
+									onConfirm={() => deleteSong(song._id)}
+								/>
 							</TableCell>
 						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+					))}
+				</TableBody>
+			</Table>
+		</div>
 	);
 };
 export default SongsTable;

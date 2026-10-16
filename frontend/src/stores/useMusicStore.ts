@@ -1,7 +1,25 @@
 import { axiosInstance } from "@/lib/axios";
+import { isDemoMode } from "@/lib/demoMode";
 import { Album, Song, Stats } from "@/types";
 import toast from "react-hot-toast";
 import { create } from "zustand";
+
+// Session-only catalog edits for the live demo (no database there). Kept outside the store and
+// re-applied after every fetch, so refetching (switching tabs, revisiting pages) doesn't undo them.
+const demoEdits = { songs: [] as Song[], albums: [] as Album[], deleted: new Set<string>() };
+
+const applyDemoSongs = (songs: Song[]) =>
+	[...demoEdits.songs, ...songs].filter((song) => !demoEdits.deleted.has(song._id));
+
+const applyDemoAlbums = (albums: Album[]) =>
+	[...demoEdits.albums, ...albums]
+		.filter((album) => !demoEdits.deleted.has(album._id))
+		.map((album) => ({
+			...album,
+			songs: [...album.songs, ...demoEdits.songs.filter((song) => song.albumId === album._id)].filter(
+				(song) => !demoEdits.deleted.has(song._id)
+			),
+		}));
 
 interface MusicStore {
 	songs: Song[];
@@ -23,9 +41,11 @@ interface MusicStore {
 	fetchSongs: () => Promise<void>;
 	deleteSong: (id: string) => Promise<void>;
 	deleteAlbum: (id: string) => Promise<void>;
+	addDemoSong: (song: Song) => void;
+	addDemoAlbum: (album: Album) => void;
 }
 
-export const useMusicStore = create<MusicStore>((set) => ({
+export const useMusicStore = create<MusicStore>((set, get) => ({
 	albums: [],
 	songs: [],
 	isLoading: false,
@@ -41,15 +61,32 @@ export const useMusicStore = create<MusicStore>((set) => ({
 		totalArtists: 0,
 	},
 
+	addDemoSong: (song) => {
+		demoEdits.songs.unshift(song);
+		set((state) => ({
+			songs: [song, ...state.songs],
+			albums: state.albums.map((album) =>
+				album._id === song.albumId ? { ...album, songs: [...album.songs, song] } : album
+			),
+		}));
+	},
+
+	addDemoAlbum: (album) => {
+		demoEdits.albums.unshift(album);
+		set((state) => ({ albums: [album, ...state.albums] }));
+	},
+
 	deleteSong: async (id) => {
 		set({ isLoading: true, error: null });
 		try {
-			await axiosInstance.delete(`/admin/songs/${id}`);
+			if (isDemoMode()) demoEdits.deleted.add(id);
+			else await axiosInstance.delete(`/admin/songs/${id}`);
 
 			set((state) => ({
 				songs: state.songs.filter((song) => song._id !== id),
+				albums: state.albums.map((album) => ({ ...album, songs: album.songs.filter((song) => song._id !== id) })),
 			}));
-			toast.success("Song deleted successfully");
+			toast.success(isDemoMode() ? "Song removed (demo, resets on reload)" : "Song deleted successfully");
 		} catch (error: any) {
 			console.log("Error in deleteSong", error);
 			toast.error("Error deleting song");
@@ -61,14 +98,20 @@ export const useMusicStore = create<MusicStore>((set) => ({
 	deleteAlbum: async (id) => {
 		set({ isLoading: true, error: null });
 		try {
-			await axiosInstance.delete(`/admin/albums/${id}`);
+			if (isDemoMode()) {
+				demoEdits.deleted.add(id);
+				get()
+					.songs.filter((song) => song.albumId === id)
+					.forEach((song) => demoEdits.deleted.add(song._id));
+			} else {
+				await axiosInstance.delete(`/admin/albums/${id}`);
+			}
+			// the backend deletes an album together with its songs
 			set((state) => ({
 				albums: state.albums.filter((album) => album._id !== id),
-				songs: state.songs.map((song) =>
-					song.albumId === state.albums.find((a) => a._id === id)?.title ? { ...song, album: null } : song
-				),
+				songs: state.songs.filter((song) => song.albumId !== id),
 			}));
-			toast.success("Album deleted successfully");
+			toast.success(isDemoMode() ? "Album removed (demo, resets on reload)" : "Album deleted successfully");
 		} catch (error: any) {
 			toast.error("Failed to delete album: " + error.message);
 		} finally {
@@ -80,7 +123,7 @@ export const useMusicStore = create<MusicStore>((set) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await axiosInstance.get("/songs");
-			set({ songs: response.data });
+			set({ songs: isDemoMode() ? applyDemoSongs(response.data) : response.data });
 		} catch (error: any) {
 			set({ error: error.message });
 		} finally {
@@ -105,7 +148,7 @@ export const useMusicStore = create<MusicStore>((set) => ({
 
 		try {
 			const response = await axiosInstance.get("/albums");
-			set({ albums: response.data });
+			set({ albums: isDemoMode() ? applyDemoAlbums(response.data) : response.data });
 		} catch (error: any) {
 			console.error("Error fetching albums:", error);
 			// Don't show error message to user for API failures in production
@@ -148,7 +191,7 @@ export const useMusicStore = create<MusicStore>((set) => ({
 				}
 			];
 			// Set the fallback data without showing an error in production
-			set({ albums: fallbackAlbums });
+			set({ albums: isDemoMode() ? applyDemoAlbums(fallbackAlbums) : fallbackAlbums });
 			if (import.meta.env.DEV) {
 				set({ error: "Could not fetch albums. Using fallback data." });
 			}
@@ -160,8 +203,14 @@ export const useMusicStore = create<MusicStore>((set) => ({
 	fetchAlbumById: async (id) => {
 		set({ isLoading: true, error: null });
 		try {
+			if (isDemoMode()) {
+				// albums created in the demo only exist in this session
+				const demoAlbum = applyDemoAlbums([]).find((album) => album._id === id);
+				if (demoAlbum) return set({ currentAlbum: demoAlbum });
+				if (demoEdits.deleted.has(id)) return set({ currentAlbum: null, error: "Album not found" });
+			}
 			const response = await axiosInstance.get(`/albums/${id}`);
-			set({ currentAlbum: response.data });
+			set({ currentAlbum: isDemoMode() ? applyDemoAlbums([response.data])[0] : response.data });
 		} catch (error: any) {
 			set({ error: error.response.data.message });
 		} finally {

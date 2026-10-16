@@ -10,58 +10,76 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { axiosInstance } from "@/lib/axios";
-import { Plus, Upload } from "lucide-react";
+import { isDemoMode } from "@/lib/demoMode";
+import { previewUrl } from "@/lib/filePreview";
+import { useMusicStore } from "@/stores/useMusicStore";
+import { ImagePlus, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 
+const currentYear = new Date().getFullYear();
+const EMPTY_ALBUM = { title: "", artist: "", releaseYear: currentYear };
+const fieldClass = "border-white/10 bg-white/5 focus-visible:ring-green-500";
+
 const AddAlbumDialog = () => {
-	const [albumDialogOpen, setAlbumDialogOpen] = useState(false);
+	const { addDemoAlbum, fetchAlbums } = useMusicStore();
+	const [open, setOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [newAlbum, setNewAlbum] = useState(EMPTY_ALBUM);
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [preview, setPreview] = useState("");
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const [newAlbum, setNewAlbum] = useState({
-		title: "",
-		artist: "",
-		releaseYear: new Date().getFullYear(),
-	});
-
-	const [imageFile, setImageFile] = useState<File | null>(null);
-
-	const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file) {
-			setImageFile(file);
-		}
+	const selectImage = (file: File | undefined) => {
+		if (!file) return;
+		const url = previewUrl(file, "image");
+		if (!url) return void toast.error("Please choose an image file");
+		if (preview) URL.revokeObjectURL(preview);
+		setImageFile(file);
+		setPreview(url);
 	};
 
+	// keepPreview: the demo album's cover is this object URL, so it must stay alive
+	const reset = (keepPreview = false) => {
+		if (!keepPreview && preview) URL.revokeObjectURL(preview);
+		setNewAlbum(EMPTY_ALBUM);
+		setImageFile(null);
+		setPreview("");
+	};
+
+	const validYear = Number.isInteger(newAlbum.releaseYear) && newAlbum.releaseYear >= 1900 && newAlbum.releaseYear <= currentYear;
+	const canSubmit = Boolean(newAlbum.title.trim() && newAlbum.artist.trim() && imageFile && validYear) && !isLoading;
+
 	const handleSubmit = async () => {
+		if (!canSubmit) return;
 		setIsLoading(true);
-
 		try {
-			if (!imageFile) {
-				return toast.error("Please upload an image");
+			if (isDemoMode()) {
+				addDemoAlbum({
+					_id: `demo_album_${Date.now()}`,
+					title: newAlbum.title.trim(),
+					artist: newAlbum.artist.trim(),
+					imageUrl: preview,
+					releaseYear: newAlbum.releaseYear,
+					songs: [],
+				});
+				toast.success("Album added (demo, resets on reload)");
+				reset(true);
+			} else {
+				const formData = new FormData();
+				formData.append("title", newAlbum.title.trim());
+				formData.append("artist", newAlbum.artist.trim());
+				formData.append("releaseYear", newAlbum.releaseYear.toString());
+				formData.append("imageFile", imageFile!);
+
+				await axiosInstance.post("/admin/albums", formData, {
+					headers: { "Content-Type": "multipart/form-data" },
+				});
+				toast.success("Album created successfully");
+				reset();
+				fetchAlbums();
 			}
-
-			const formData = new FormData();
-			formData.append("title", newAlbum.title);
-			formData.append("artist", newAlbum.artist);
-			formData.append("releaseYear", newAlbum.releaseYear.toString());
-			formData.append("imageFile", imageFile);
-
-			await axiosInstance.post("/admin/albums", formData, {
-				headers: {
-					"Content-Type": "multipart/form-data",
-				},
-			});
-
-			setNewAlbum({
-				title: "",
-				artist: "",
-				releaseYear: new Date().getFullYear(),
-			});
-			setImageFile(null);
-			setAlbumDialogOpen(false);
-			toast.success("Album created successfully");
+			setOpen(false);
 		} catch (error: any) {
 			toast.error("Failed to create album: " + error.message);
 		} finally {
@@ -70,83 +88,104 @@ const AddAlbumDialog = () => {
 	};
 
 	return (
-		<Dialog open={albumDialogOpen} onOpenChange={setAlbumDialogOpen}>
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				setOpen(next);
+				if (!next) reset();
+			}}
+		>
 			<DialogTrigger asChild>
-				<Button className='bg-violet-500 hover:bg-violet-600 text-white'>
-					<Plus className='mr-2 h-4 w-4' />
-					Add Album
+				<Button className='h-10 shrink-0 bg-green-500 font-semibold text-black hover:bg-green-400'>
+					<Plus className='size-4' />
+					Add album
 				</Button>
 			</DialogTrigger>
-			<DialogContent className='bg-zinc-900 border-zinc-700'>
+			<DialogContent className='border-white/10 bg-zinc-900 sm:max-w-xl'>
 				<DialogHeader>
-					<DialogTitle>Add New Album</DialogTitle>
-					<DialogDescription>Add a new album to your collection</DialogDescription>
+					<DialogTitle>Add an album</DialogTitle>
+					<DialogDescription>Upload the cover art and fill in the release details.</DialogDescription>
 				</DialogHeader>
-				<div className='space-y-4 py-4'>
-					<input
-						type='file'
-						ref={fileInputRef}
-						onChange={handleImageSelect}
-						accept='image/*'
-						className='hidden'
-					/>
-					<div
-						className='flex items-center justify-center p-6 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer'
+
+				<input type='file' ref={fileInputRef} onChange={(e) => selectImage(e.target.files?.[0])} accept='image/*' hidden />
+
+				<div className='grid gap-5 py-2 sm:grid-cols-[160px_1fr]'>
+					<button
+						type='button'
 						onClick={() => fileInputRef.current?.click()}
+						className='group relative flex aspect-square w-40 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/15 bg-white/[0.03] transition-colors hover:border-green-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500'
 					>
-						<div className='text-center'>
-							<div className='p-3 bg-zinc-800 rounded-full inline-block mb-2'>
-								<Upload className='h-6 w-6 text-zinc-400' />
-							</div>
-							<div className='text-sm text-zinc-400 mb-2'>
-								{imageFile ? imageFile.name : "Upload album artwork"}
-							</div>
-							<Button variant='outline' size='sm' className='text-xs'>
-								Choose File
-							</Button>
+						{preview ? (
+							<>
+								<img src={preview} alt='Selected cover art' className='size-full object-cover' />
+								<span className='absolute inset-x-0 bottom-0 bg-black/60 py-1 text-center text-xs opacity-0 transition-opacity group-hover:opacity-100'>
+									Change cover
+								</span>
+							</>
+						) : (
+							<span className='flex flex-col items-center gap-2 text-sm text-zinc-400'>
+								<ImagePlus className='size-6' aria-hidden='true' />
+								Add cover art
+							</span>
+						)}
+					</button>
+
+					<div className='space-y-4'>
+						<div className='space-y-1.5'>
+							<label htmlFor='album-title' className='text-sm font-medium'>
+								Album title
+							</label>
+							<Input
+								id='album-title'
+								value={newAlbum.title}
+								onChange={(e) => setNewAlbum({ ...newAlbum, title: e.target.value })}
+								placeholder='Album title'
+								className={fieldClass}
+							/>
+						</div>
+						<div className='space-y-1.5'>
+							<label htmlFor='album-artist' className='text-sm font-medium'>
+								Artist
+							</label>
+							<Input
+								id='album-artist'
+								value={newAlbum.artist}
+								onChange={(e) => setNewAlbum({ ...newAlbum, artist: e.target.value })}
+								placeholder='Artist name'
+								className={fieldClass}
+							/>
+						</div>
+						<div className='space-y-1.5'>
+							<label htmlFor='album-year' className='text-sm font-medium'>
+								Release year
+							</label>
+							<Input
+								id='album-year'
+								type='number'
+								value={newAlbum.releaseYear}
+								onChange={(e) => setNewAlbum({ ...newAlbum, releaseYear: parseInt(e.target.value) })}
+								min={1900}
+								max={currentYear}
+								aria-invalid={!validYear}
+								className={fieldClass}
+							/>
 						</div>
 					</div>
-					<div className='space-y-2'>
-						<label className='text-sm font-medium'>Album Title</label>
-						<Input
-							value={newAlbum.title}
-							onChange={(e) => setNewAlbum({ ...newAlbum, title: e.target.value })}
-							className='bg-zinc-800 border-zinc-700'
-							placeholder='Enter album title'
-						/>
-					</div>
-					<div className='space-y-2'>
-						<label className='text-sm font-medium'>Artist</label>
-						<Input
-							value={newAlbum.artist}
-							onChange={(e) => setNewAlbum({ ...newAlbum, artist: e.target.value })}
-							className='bg-zinc-800 border-zinc-700'
-							placeholder='Enter artist name'
-						/>
-					</div>
-					<div className='space-y-2'>
-						<label className='text-sm font-medium'>Release Year</label>
-						<Input
-							type='number'
-							value={newAlbum.releaseYear}
-							onChange={(e) => setNewAlbum({ ...newAlbum, releaseYear: parseInt(e.target.value) })}
-							className='bg-zinc-800 border-zinc-700'
-							placeholder='Enter release year'
-							min={1900}
-							max={new Date().getFullYear()}
-						/>
-					</div>
 				</div>
-				<DialogFooter>
-					<Button variant='outline' onClick={() => setAlbumDialogOpen(false)} disabled={isLoading}>
+
+				<DialogFooter className='gap-2'>
+					<Button
+						variant='ghost'
+						onClick={() => {
+							setOpen(false);
+							reset();
+						}}
+						disabled={isLoading}
+					>
 						Cancel
 					</Button>
-					<Button
-						onClick={handleSubmit}
-						className='bg-violet-500 hover:bg-violet-600'
-						disabled={isLoading || !imageFile || !newAlbum.title || !newAlbum.artist}
-					>
-						{isLoading ? "Creating..." : "Add Album"}
+					<Button onClick={handleSubmit} disabled={!canSubmit} className='bg-green-500 font-semibold text-black hover:bg-green-400'>
+						{isLoading ? "Creating…" : "Add album"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
