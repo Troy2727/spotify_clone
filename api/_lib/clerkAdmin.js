@@ -7,7 +7,7 @@ import { createPublicKey, verify } from 'node:crypto';
 const CLERK_API = 'https://api.clerk.com/v1';
 const CLOCK_SKEW_SECONDS = 5;
 
-async function clerkGet(path) {
+export async function clerkGet(path) {
   const response = await fetch(`${CLERK_API}${path}`, {
     headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
     signal: AbortSignal.timeout(5000),
@@ -70,4 +70,24 @@ export async function checkAdmin(req) {
 
   const admin = await isAdminUser(userId);
   return { status: 200, admin, message: admin ? 'Admin check successful' : 'Not an admin' };
+}
+
+// Guard for admin-only handlers: sends 401/403/500 and returns false unless the caller is an admin
+export async function requireAdmin(req, res) {
+  try {
+    const { status, admin, message } = await checkAdmin(req);
+    if (status !== 200) {
+      res.status(status).json({ message });
+      return false;
+    }
+    if (!admin) {
+      res.status(403).json({ message: 'Unauthorized - you must be an admin' });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Admin check failed:', error.message);
+    res.status(500).json({ message: 'Could not verify admin status' });
+    return false;
+  }
 }

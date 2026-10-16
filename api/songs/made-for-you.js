@@ -1,50 +1,50 @@
 // Mock API handler for made-for-you songs in Vercel
 
-export default function handler(req, res) {
-  // Return mock made-for-you songs data
-  const madeForYouSongs = [
-    {
-      _id: "mfy1",
-      title: "Starboy",
-      artist: "The Weeknd",
-      imageUrl: "/cover-images/16.jpg",
-      audioUrl: "/songs/7.mp3",
-      duration: 230,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      _id: "mfy2",
-      title: "Enemy",
-      artist: "Imagine Dragons & JID",
-      imageUrl: "/cover-images/1.jpg",
-      audioUrl: "/songs/8.mp3",
-      duration: 215,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      _id: "mfy3",
-      title: "Yeah!",
-      artist: "Usher",
-      imageUrl: "/cover-images/15.jpg",
-      audioUrl: "/songs/9.mp3",
-      duration: 250,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      _id: "mfy4",
-      title: "Shape of You",
-      artist: "Ed Sheeran",
-      imageUrl: "/cover-images/4.jpg",
-      audioUrl: "/songs/10.mp3",
-      duration: 235,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  ];
+// Mock made-for-you songs data (also used by api/songs/index.js)
+export const madeForYouSongs = [
+  {
+    _id: "mfy1",
+    title: "Starboy",
+    artist: "The Weeknd",
+    imageUrl: "/cover-images/16.jpg",
+    audioUrl: "/songs/7.mp3",
+    duration: 230,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: "mfy2",
+    title: "Enemy",
+    artist: "Imagine Dragons & JID",
+    imageUrl: "/cover-images/1.jpg",
+    audioUrl: "/songs/8.mp3",
+    duration: 215,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: "mfy3",
+    title: "Yeah!",
+    artist: "Usher",
+    imageUrl: "/cover-images/15.jpg",
+    audioUrl: "/songs/9.mp3",
+    duration: 250,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: "mfy4",
+    title: "Shape of You",
+    artist: "Ed Sheeran",
+    imageUrl: "/cover-images/4.jpg",
+    audioUrl: "/songs/10.mp3",
+    duration: 235,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
+export default function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
