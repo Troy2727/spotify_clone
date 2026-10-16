@@ -1,50 +1,29 @@
-# React + TypeScript + Vite
+# Spotify Clone — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 + TypeScript app built with Vite, Tailwind CSS and shadcn/ui. See the [root README](../README.md) for the full project, architecture diagrams and setup.
 
-Currently, two official plugins are available:
+## Run it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build into dist/
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Set `VITE_CLERK_PUBLISHABLE_KEY` in `frontend/.env`. In development the API is expected on `http://localhost:5000` (start it with `npm run dev` from the repo root to run both).
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## Where things live
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+| Path | Contents |
+|---|---|
+| `src/pages/` | Route pages — home, album, chat, admin, auth callback, 404 |
+| `src/layout/` | Main layout, sidebar, friends panel, player bar, audio player, waveform, ambient background |
+| `src/components/` | Shared UI; generated shadcn/ui primitives in `components/ui/` |
+| `src/stores/` | Zustand stores: `useMusicStore`, `usePlayerStore`, `useChatStore`, `useAuthStore` |
+| `src/lib/` | Axios instance, demo-mode helpers (`demoMode.ts`, `demoChat.ts`), audio analyser, file previews |
+| `src/types/` | Shared TypeScript types |
+
+## Notes
+
+- **Demo mode** — on `*.vercel.app` hosts the app runs chat and admin edits as a session-only demo, because the deployment has no database or socket server (`src/lib/demoMode.ts`).
+- **Styling** — the Midnight glass theme lives in `src/index.css` (`.glass-panel`, `.ambient-glow`); accent color is Spotify green.
