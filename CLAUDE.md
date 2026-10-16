@@ -50,7 +50,7 @@ spotify_clone/
 ├── api/                    # Vercel serverless functions (production API)
 │   ├── index.js            # Main API proxy
 │   ├── albums.js, songs/, users/, etc.
-│   └── socket.js           # Socket.IO for Vercel
+│   └── _lib/               # Shared helpers (not routes): Clerk admin check, catalog
 ├── backend/                # Development Express server
 │   ├── src/
 │   │   ├── controller/     # Business logic
@@ -72,7 +72,8 @@ spotify_clone/
 - **Development**: Express backend (backend/src/index.js) + Vite dev server
 - **Production (Vercel)**: Serverless functions (api/) + static frontend (frontend/dist)
 - `vercel.json` rewrites map `/api/*` to serverless functions
-- Socket.IO works via api/socket.js in production
+- Production API is mock data (no database); chat and admin edits run as session-only demos there (`frontend/src/lib/demoMode.ts`)
+- Hobby plan limit: at most 12 serverless functions per deployment (files in `api/` outside `_lib/`)
 
 ### State Management (Zustand)
 - `useMusicStore`: albums, songs, featured/trending/madeForYou collections, stats
@@ -90,7 +91,7 @@ spotify_clone/
 
 **Implementation:**
 - Development: backend/src/lib/socket.js
-- Production: api/socket.js (Vercel serverless)
+- Production: none — Vercel serverless can't hold Socket.IO connections, so the frontend uses simulated friends (`frontend/src/lib/demoChat.ts`)
 - CORS configured for localhost:3000, localhost:5173, and Vercel URL
 
 ### API Structure

@@ -1,27 +1,27 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music } from "lucide-react";
-import SongsTable from "./SongsTable";
+import { useMusicStore } from "@/stores/useMusicStore";
+import { useState } from "react";
 import AddSongDialog from "./AddSongDialog";
+import SearchInput from "./SearchInput";
+import SongsTable from "./SongsTable";
 
 const SongsTabContent = () => {
+	const { songs } = useMusicStore();
+	const [query, setQuery] = useState("");
+
+	const q = query.trim().toLowerCase();
+	const filtered = q ? songs.filter((song) => `${song.title} ${song.artist}`.toLowerCase().includes(q)) : songs;
+
 	return (
-		<Card>
-			<CardHeader>
-				<div className='flex items-center justify-between'>
-					<div>
-						<CardTitle className='flex items-center gap-2'>
-							<Music className='size-5 text-emerald-500' />
-							Songs Library
-						</CardTitle>
-						<CardDescription>Manage your music tracks</CardDescription>
-					</div>
-					<AddSongDialog />
-				</div>
-			</CardHeader>
-			<CardContent>
-				<SongsTable />
-			</CardContent>
-		</Card>
+		<section aria-label='Songs' className='space-y-4'>
+			<div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+				<SearchInput value={query} onChange={setQuery} label='Search songs' placeholder='Search songs or artists' />
+				<p className='text-sm text-zinc-400 sm:ml-auto' aria-live='polite'>
+					{filtered.length} of {songs.length} songs
+				</p>
+				<AddSongDialog />
+			</div>
+			<SongsTable songs={filtered} isFiltered={q.length > 0} />
+		</section>
 	);
 };
 export default SongsTabContent;

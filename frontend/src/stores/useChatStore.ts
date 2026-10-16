@@ -3,6 +3,7 @@ import { Message, User } from "@/types";
 import { create } from "zustand";
 import { io } from "socket.io-client";
 import { DEMO_ACTIVITIES, DEMO_FRIENDS, DEMO_ONLINE, addDemoMessage, getDemoConversation, nextDemoReply } from "@/lib/demoChat";
+import { isDemoMode } from "@/lib/demoMode";
 
 // Use environment variable or default to window location for production
 const getBaseURL = () => {
@@ -21,9 +22,7 @@ const getBaseURL = () => {
 };
 
 // Check if we're in Vercel production environment
-export const isVercelProduction = () => {
-	return !import.meta.env.DEV && window.location.hostname.includes('vercel.app');
-};
+export const isVercelProduction = isDemoMode;
 
 interface ChatStore {
 	users: User[];
