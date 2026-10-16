@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { axiosInstance } from "@/lib/axios";
 import { isDemoMode } from "@/lib/demoMode";
+import { previewUrl } from "@/lib/filePreview";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { ImagePlus, Plus } from "lucide-react";
 import { useRef, useState } from "react";
@@ -31,9 +32,11 @@ const AddAlbumDialog = () => {
 
 	const selectImage = (file: File | undefined) => {
 		if (!file) return;
+		const url = previewUrl(file, "image");
+		if (!url) return void toast.error("Please choose an image file");
 		if (preview) URL.revokeObjectURL(preview);
 		setImageFile(file);
-		setPreview(URL.createObjectURL(file));
+		setPreview(url);
 	};
 
 	// keepPreview: the demo album's cover is this object URL, so it must stay alive
