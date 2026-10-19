@@ -24,7 +24,7 @@ const MainLayout = () => {
 	}, []);
 
 	return (
-		<div className='relative isolate h-screen bg-black text-white flex flex-col'>
+		<div className='relative isolate h-dvh bg-black text-white flex flex-col'>
 			<AmbientBackground />
 			<ResizablePanelGroup direction='horizontal' className='flex-1 flex h-full overflow-hidden p-1 sm:p-2'>
 				<AudioPlayer />

@@ -49,7 +49,7 @@ const RecommendedPlaylists = () => {
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+			<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-8">
 				{Array.from({ length: 6 }).map((_, i) => (
 					<div key={i} className="bg-zinc-800/50 rounded-md h-20 animate-pulse" />
 				))}
@@ -58,7 +58,7 @@ const RecommendedPlaylists = () => {
 	}
 
 	return (
-		<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+		<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-8">
 			{playlists.map((playlist) => (
 				<div
 					key={playlist.id}
@@ -68,9 +68,9 @@ const RecommendedPlaylists = () => {
 					<img
 						src={playlist.imageUrl}
 						alt={playlist.title}
-						className="w-16 sm:w-20 h-16 sm:h-20 object-cover flex-shrink-0"
+						className="w-12 sm:w-20 h-12 sm:h-20 object-cover flex-shrink-0"
 					/>
-					<div className="flex-1 p-4">
+					<div className="flex-1 min-w-0 px-2 sm:p-4">
 						<p className="font-medium truncate">{playlist.title}</p>
 						<p className="text-sm text-zinc-400 truncate">{playlist.artist}</p>
 					</div>

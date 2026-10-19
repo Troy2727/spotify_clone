@@ -51,10 +51,10 @@ export const PlaybackControls = () => {
 	};
 
 	return (
-		<footer className='h-20 sm:h-24 bg-black/45 border-t border-white/[0.06] px-4'>
-			<div className='flex justify-between items-center h-full max-w-[1800px] mx-auto'>
+		<footer className='sm:h-24 bg-black/45 border-t border-white/[0.06] px-4 py-2 sm:py-0'>
+			<div className='flex flex-wrap sm:flex-nowrap justify-between items-center content-center gap-x-2 gap-y-1 sm:gap-0 h-full max-w-[1800px] mx-auto'>
 				{/* currently playing song */}
-				<div className='flex items-center gap-4 min-w-[180px] w-[30%]'>
+				<div className='flex items-center gap-3 sm:gap-4 flex-1 min-w-0 sm:flex-none sm:min-w-[180px] sm:w-[30%]'>
 					{currentSong && (
 						<>
 							<img
@@ -62,7 +62,7 @@ export const PlaybackControls = () => {
 								alt={currentSong.title}
 								className='w-10 h-10 sm:w-14 sm:h-14 object-cover rounded-md'
 							/>
-							<div className='flex-1 min-w-0 hidden xs:block'>
+							<div className='flex-1 min-w-0'>
 								<div className='font-medium truncate hover:underline cursor-pointer'>
 									{currentSong.title}
 								</div>
@@ -78,8 +78,11 @@ export const PlaybackControls = () => {
 				</div>
 
 				{/* player controls*/}
-				<div className='flex flex-col items-center gap-2 flex-1 max-w-full sm:max-w-[45%]'>
-					<div className='flex items-center gap-4 sm:gap-6'>
+				{/* on mobile, pl-16 (waveform 56px + gap 8px) centers the buttons under the progress bar */}
+				<div
+					className={`flex flex-col items-center gap-2 w-full order-last sm:order-none sm:w-auto sm:flex-1 max-w-full sm:max-w-[45%] sm:pl-0 ${currentSong ? "pl-16" : ""}`}
+				>
+					<div className='flex items-center gap-1 sm:gap-6'>
 						<Button
 							size='icon'
 							variant='ghost'
@@ -166,6 +169,18 @@ export const PlaybackControls = () => {
 							}}
 						/>
 					</div>
+				</div>
+
+				{/* mobile: waveform + progress on their own row */}
+				<div className='flex sm:hidden items-center gap-2 w-full h-6'>
+					{currentSong && <Waveform />}
+					<Slider
+						value={[currentTime]}
+						max={duration || 100}
+						step={1}
+						className='w-full'
+						onValueChange={handleSeek}
+					/>
 				</div>
 			</div>
 		</footer>

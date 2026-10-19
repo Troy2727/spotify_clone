@@ -33,10 +33,10 @@ const HomePage = () => {
 	}, [initializeQueue, madeForYouSongs, trendingSongs, featuredSongs]);
 
 	return (
-		<main className='relative isolate rounded-md overflow-hidden h-full glass-panel'>
+		<main className='relative isolate rounded-md overflow-hidden h-full flex flex-col glass-panel'>
 			<div aria-hidden='true' className='ambient-band pointer-events-none absolute inset-x-0 top-0 -z-10 h-80' />
 			<Topbar />
-			<ScrollArea className='h-[calc(100vh-180px)]'>
+			<ScrollArea className='flex-1 min-h-0'>
 				<div className='p-4 sm:p-6'>
 					<h1 className='text-2xl sm:text-3xl font-bold mb-6'>Good afternoon</h1>
 					<RecommendedPlaylists />

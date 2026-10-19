@@ -80,7 +80,7 @@ const ChatPage = () => {
 	console.log("ChatPage: Current user:", user);
 
 	return (
-		<main className='h-full rounded-lg glass-panel overflow-hidden'>
+		<main className='h-full flex flex-col rounded-lg glass-panel overflow-hidden'>
 			<Topbar />
 
 			{/* Connection status indicator */}
@@ -109,7 +109,7 @@ const ChatPage = () => {
 				</div>
 			</div>
 
-			<div className='grid lg:grid-cols-[300px_1fr] grid-cols-[70px_1fr] sm:grid-cols-[80px_1fr] h-[calc(100vh-200px)]'>
+			<div className='grid lg:grid-cols-[300px_1fr] grid-cols-[70px_1fr] sm:grid-cols-[80px_1fr] flex-1 min-h-0'>
 				<UsersList />
 
 				{/* chat message */}
@@ -119,7 +119,7 @@ const ChatPage = () => {
 							<ChatHeader />
 
 							{/* Messages */}
-							<ScrollArea className='h-[calc(100vh-360px)]'>
+							<ScrollArea className='flex-1 min-h-0'>
 								<div className='p-2 sm:p-4 space-y-3 sm:space-y-4'>
 									{messages.length > 0 ? (
 										messages.map((message) => (
