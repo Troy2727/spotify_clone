@@ -38,8 +38,7 @@ npm test               # Runs tests in both backend and frontend
 
 # Seeding
 cd backend
-npm run seed:songs
-npm run seed:albums
+npm run seed            # replaces songs and albums with the api/ demo catalog
 ```
 
 ## Architecture

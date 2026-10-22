@@ -1,12 +1,16 @@
-const UsersListSkeleton = () => {
-	return Array.from({ length: 4 }).map((_, i) => (
-		<div key={i} className='flex items-center justify-center lg:justify-start gap-3 p-3 rounded-lg animate-pulse'>
-			<div className='h-12 w-12 rounded-full bg-zinc-800' />
-			<div className='flex-1 lg:block hidden'>
-				<div className='h-4 w-24 bg-zinc-800 rounded mb-2' />
-				<div className='h-3 w-32 bg-zinc-800 rounded' />
-			</div>
-		</div>
-	));
-};
-export default UsersListSkeleton;
+/** Four placeholder contacts for the chat list while users load. */
+export default function UsersListSkeleton() {
+	return (
+		<>
+			{Array.from({ length: 4 }, (_, i) => (
+				<div key={i} className='flex animate-pulse items-center justify-center gap-3 rounded-lg p-3 lg:justify-start'>
+					<div className='h-12 w-12 rounded-full bg-zinc-800' />
+					<div className='hidden flex-1 space-y-2 lg:block'>
+						<div className='h-4 w-24 rounded bg-zinc-800' />
+						<div className='h-3 w-32 rounded bg-zinc-800' />
+					</div>
+				</div>
+			))}
+		</>
+	);
+}

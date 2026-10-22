@@ -1,57 +1,52 @@
-import { axiosInstance } from "@/lib/axios";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { useChatStore } from "@/stores/useChatStore";
 import { useAuth } from "@clerk/clerk-react";
 import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
+import { axiosInstance } from "@/lib/axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useChatStore } from "@/stores/useChatStore";
 
-const updateApiToken = (token: string | null) => {
-	if (token) axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-	else delete axiosInstance.defaults.headers.common["Authorization"];
-};
+/** Attach (or remove) the Clerk session token on every API request. */
+function setApiToken(token: string | null) {
+	if (token) axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+	else delete axiosInstance.defaults.headers.common.Authorization;
+}
 
-const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+/**
+ * Before rendering the app: send the Clerk token with API calls, check whether
+ * the user is an admin, and connect to chat. Disconnects chat on sign-out.
+ */
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
 	const { getToken, userId } = useAuth();
-	const [loading, setLoading] = useState(true);
-	const { checkAdminStatus } = useAuthStore();
-	const { initSocket, disconnectSocket } = useChatStore();
+	const checkAdminStatus = useAuthStore((s) => s.checkAdminStatus);
+	const initSocket = useChatStore((s) => s.initSocket);
+	const disconnectSocket = useChatStore((s) => s.disconnectSocket);
+	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
-		const initAuth = async () => {
+		(async () => {
 			try {
 				const token = await getToken();
-				updateApiToken(token);
+				setApiToken(token);
 				if (token) {
 					await checkAdminStatus();
-					// init socket
-					if (userId) {
-						console.log("Initializing socket with userId:", userId);
-						initSocket(userId);
-					} else {
-						console.log("No userId available for socket initialization");
-					}
+					if (userId) initSocket(userId);
 				}
-			} catch (error: any) {
-				updateApiToken(null);
-				console.log("Error in auth provider", error);
+			} catch (error) {
+				setApiToken(null);
+				console.error("Setting up the session failed:", error);
 			} finally {
-				setLoading(false);
+				setReady(true);
 			}
-		};
-
-		initAuth();
-
-		// clean up
+		})();
 		return () => disconnectSocket();
 	}, [getToken, userId, checkAdminStatus, initSocket, disconnectSocket]);
 
-	if (loading)
+	if (!ready) {
 		return (
-			<div className='h-screen w-full flex items-center justify-center'>
-				<Loader className='size-8 text-emerald-500 animate-spin' />
+			<div className="flex h-screen w-full items-center justify-center">
+				<Loader className="size-8 animate-spin text-emerald-500" />
 			</div>
 		);
-
+	}
 	return <>{children}</>;
-};
-export default AuthProvider;
+}

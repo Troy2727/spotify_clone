@@ -10,8 +10,7 @@
 		"dev": "nodemon src/index.js",
 		"start": "node src/index.js",
 		"build": "echo \"No build needed for backend\" && exit 0",
-		"seed:songs": "node src/seeds/songs.js",
-		"seed:albums": "node src/seeds/albums.js",
+		"seed": "node src/seed.js",
 		"lint": "echo \"No lint specified yet\" && exit 0",
 		"lint:fix": "echo \"No lint:fix specified yet\" && exit 0",
 		"test": "echo \"No tests specified yet\" && exit 0"

@@ -1,23 +1,21 @@
-import Topbar from "@/components/Topbar";
-import { useMusicStore } from "@/stores/useMusicStore";
 import { useEffect } from "react";
+import Topbar from "@/components/Topbar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import SectionGrid from "./components/SectionGrid";
+import { useMusicStore } from "@/stores/useMusicStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import RecommendedPlaylists from "./components/RecommendedPlaylists";
+import SectionGrid from "./components/SectionGrid";
 
-const HomePage = () => {
-	const {
-		fetchFeaturedSongs,
-		fetchMadeForYouSongs,
-		fetchTrendingSongs,
-		isLoading,
-		madeForYouSongs,
-		featuredSongs,
-		trendingSongs,
-	} = useMusicStore();
+function greeting(hour = new Date().getHours()) {
+	if (hour < 12) return "Good morning";
+	if (hour < 18) return "Good afternoon";
+	return "Good evening";
+}
 
-	const { initializeQueue } = usePlayerStore();
+export default function HomePage() {
+	const { fetchFeaturedSongs, fetchMadeForYouSongs, fetchTrendingSongs, isLoading, featuredSongs, madeForYouSongs, trendingSongs } =
+		useMusicStore();
+	const initializeQueue = usePlayerStore((s) => s.initializeQueue);
 
 	useEffect(() => {
 		fetchFeaturedSongs();
@@ -25,22 +23,21 @@ const HomePage = () => {
 		fetchTrendingSongs();
 	}, [fetchFeaturedSongs, fetchMadeForYouSongs, fetchTrendingSongs]);
 
+	// Once every section has loaded, queue all of it so Next/Previous move through the page.
 	useEffect(() => {
-		if (madeForYouSongs.length > 0 && featuredSongs.length > 0 && trendingSongs.length > 0) {
-			const allSongs = [...featuredSongs, ...madeForYouSongs, ...trendingSongs];
-			initializeQueue(allSongs);
+		if (featuredSongs.length && madeForYouSongs.length && trendingSongs.length) {
+			initializeQueue([...featuredSongs, ...madeForYouSongs, ...trendingSongs]);
 		}
-	}, [initializeQueue, madeForYouSongs, trendingSongs, featuredSongs]);
+	}, [initializeQueue, featuredSongs, madeForYouSongs, trendingSongs]);
 
 	return (
-		<main className='relative isolate rounded-md overflow-hidden h-full flex flex-col glass-panel'>
-			<div aria-hidden='true' className='ambient-band pointer-events-none absolute inset-x-0 top-0 -z-10 h-80' />
+		<main className='glass-panel relative isolate flex h-full flex-col overflow-hidden rounded-md'>
+			<div aria-hidden className='ambient-band pointer-events-none absolute inset-x-0 top-0 -z-10 h-80' />
 			<Topbar />
-			<ScrollArea className='flex-1 min-h-0'>
+			<ScrollArea className='min-h-0 flex-1'>
 				<div className='p-4 sm:p-6'>
-					<h1 className='text-2xl sm:text-3xl font-bold mb-6'>Good afternoon</h1>
+					<h1 className='mb-6 text-2xl font-bold sm:text-3xl'>{greeting()}</h1>
 					<RecommendedPlaylists />
-
 					<div className='space-y-8'>
 						<SectionGrid title='Made For You' songs={madeForYouSongs} isLoading={isLoading} />
 						<SectionGrid title='Trending' songs={trendingSongs} isLoading={isLoading} />
@@ -49,5 +46,4 @@ const HomePage = () => {
 			</ScrollArea>
 		</main>
 	);
-};
-export default HomePage;
+}

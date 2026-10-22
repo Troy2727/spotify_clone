@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDuration } from "@/pages/album/AlbumPage";
+import { formatDuration } from "@/lib/format";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { Song } from "@/types";
 import { Clock, Music } from "lucide-react";

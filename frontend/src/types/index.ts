@@ -1,10 +1,14 @@
+// API shapes. Ids are MongoDB ObjectIds as strings (mock ids on the Vercel demo).
+
 export interface Song {
 	_id: string;
 	title: string;
 	artist: string;
+	/** null for singles that aren't on an album */
 	albumId: string | null;
 	imageUrl: string;
 	audioUrl: string;
+	/** seconds */
 	duration: number;
 	createdAt: string;
 	updatedAt: string;
@@ -19,6 +23,7 @@ export interface Album {
 	songs: Song[];
 }
 
+/** Admin dashboard counters */
 export interface Stats {
 	totalSongs: number;
 	totalAlbums: number;
@@ -26,6 +31,7 @@ export interface Stats {
 	totalArtists: number;
 }
 
+/** A chat message; sender and receiver are Clerk user ids. */
 export interface Message {
 	_id: string;
 	senderId: string;
@@ -35,6 +41,7 @@ export interface Message {
 	updatedAt: string;
 }
 
+/** Someone you can chat with (our users collection, keyed by their Clerk id). */
 export interface User {
 	_id: string;
 	clerkId: string;

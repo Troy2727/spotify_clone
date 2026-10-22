@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { axiosInstance } from "@/lib/axios";
 import { isDemoMode } from "@/lib/demoMode";
 import { previewUrl } from "@/lib/filePreview";
-import { formatDuration } from "@/pages/album/AlbumPage";
+import { formatDuration } from "@/lib/format";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { ImagePlus, Music2, Plus } from "lucide-react";
 import { useRef, useState } from "react";

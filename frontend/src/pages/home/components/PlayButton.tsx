@@ -1,32 +1,24 @@
+import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Song } from "@/types";
-import { Pause, Play } from "lucide-react";
 
-const PlayButton = ({ song }: { song: Song }) => {
+/** Green play/pause button that appears on card hover; stays visible for the song that's loaded. */
+export default function PlayButton({ song }: { song: Song }) {
 	const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
-	const isCurrentSong = currentSong?._id === song._id;
-
-	const handlePlay = () => {
-		if (isCurrentSong) togglePlay();
-		else setCurrentSong(song);
-	};
+	const isLoaded = currentSong?._id === song._id;
+	const showPause = isLoaded && isPlaying;
 
 	return (
 		<Button
-			size={"icon"}
-			onClick={handlePlay}
-			className={`absolute bottom-3 right-2 bg-green-500 hover:bg-green-400 hover:scale-105 transition-all 
-				opacity-0 translate-y-2 group-hover:translate-y-0 ${
-					isCurrentSong ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-				}`}
+			size='icon'
+			aria-label={`${showPause ? "Pause" : "Play"} ${song.title}`}
+			onClick={() => (isLoaded ? togglePlay() : setCurrentSong(song))}
+			className={`absolute bottom-3 right-2 translate-y-2 bg-green-500 transition-all hover:scale-105 hover:bg-green-400 group-hover:translate-y-0 ${
+				isLoaded ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+			}`}
 		>
-			{isCurrentSong && isPlaying ? (
-				<Pause className='size-5 text-black' />
-			) : (
-				<Play className='size-5 text-black' />
-			)}
+			{showPause ? <Pause className='size-5 text-black' /> : <Play className='size-5 text-black' />}
 		</Button>
 	);
-};
-export default PlayButton;
+}

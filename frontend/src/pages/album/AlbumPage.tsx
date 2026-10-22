@@ -1,36 +1,25 @@
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMusicStore } from "@/stores/useMusicStore";
-import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Clock, Pause, Play } from "lucide-react";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDuration, formatLength as formatTotalDuration } from "@/lib/format";
+import { useMusicStore } from "@/stores/useMusicStore";
+import { usePlayerStore } from "@/stores/usePlayerStore";
 
-export const formatDuration = (seconds: number) => {
-	const minutes = Math.floor(seconds / 60);
-	const remainingSeconds = seconds % 60;
-	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
+/** Three bouncing bars marking the track that's playing. */
+function Equalizer() {
+	return (
+		<span role='img' aria-label='Now playing' className='flex h-3.5 items-end gap-[2px]'>
+			{[0, 0.25, 0.5].map((delay) => (
+				<span key={delay} className='equalizer-bar h-full w-[3px] rounded-sm bg-green-500' style={{ animationDelay: `${delay}s` }} />
+			))}
+		</span>
+	);
+}
 
-const formatTotalDuration = (seconds: number) => {
-	const minutes = Math.floor(seconds / 60);
-	const remainingSeconds = seconds % 60;
-	return minutes > 0 ? `${minutes} min ${remainingSeconds} sec` : `${remainingSeconds} sec`;
-};
-
-const Equalizer = () => (
-	<span role='img' aria-label='Now playing' className='flex h-3.5 items-end gap-[2px]'>
-		{[0, 0.25, 0.5].map((delay) => (
-			<span
-				key={delay}
-				className='equalizer-bar h-full w-[3px] rounded-sm bg-green-500'
-				style={{ animationDelay: `${delay}s` }}
-			/>
-		))}
-	</span>
-);
-
-const AlbumPage = () => {
+/** One album: blurred cover backdrop, header, play button and the track list. */
+export default function AlbumPage() {
 	const { albumId } = useParams();
 	const { fetchAlbumById, currentAlbum, isLoading } = useMusicStore();
 	const { currentSong, isPlaying, playAlbum, togglePlay } = usePlayerStore();
@@ -43,23 +32,11 @@ const AlbumPage = () => {
 
 	const songs = currentAlbum?.songs ?? [];
 	const isAlbumCurrent = songs.some((song) => song._id === currentSong?._id);
-	const totalDuration = songs.reduce((sum, song) => sum + song.duration, 0);
+	const totalDuration = songs.reduce((total, song) => total + song.duration, 0);
 
-	const handlePlayAlbum = () => {
-		if (!currentAlbum) return;
-
-		if (isAlbumCurrent) togglePlay();
-		else {
-			// start playing the album from the beginning
-			playAlbum(currentAlbum.songs, 0);
-		}
-	};
-
-	const handlePlaySong = (index: number) => {
-		if (!currentAlbum) return;
-
-		playAlbum(currentAlbum.songs, index);
-	};
+	// The big button pauses/resumes this album if it's playing, otherwise starts it from track 1.
+	const handlePlayAlbum = () => (isAlbumCurrent ? togglePlay() : playAlbum(songs, 0));
+	const handlePlaySong = (index: number) => playAlbum(songs, index);
 
 	return (
 		<div className='h-full'>
@@ -187,5 +164,4 @@ const AlbumPage = () => {
 			</ScrollArea>
 		</div>
 	);
-};
-export default AlbumPage;
+}

@@ -1,74 +1,75 @@
+import { Laptop2, ListMusic, type LucideIcon, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { usePlayerStore } from "@/stores/usePlayerStore";
-import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import Waveform from "./Waveform";
 
-const formatTime = (seconds: number) => {
-	const minutes = Math.floor(seconds / 60);
-	const remainingSeconds = Math.floor(seconds % 60);
-	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+/** 125 -> "2:05" */
+const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+
+const audioElement = () => document.querySelector("audio");
+
+/** Playback position and length of the shared <audio> element (see AudioPlayer). */
+function useProgress(songKey: unknown) {
+	const [time, setTime] = useState(0);
+	const [length, setLength] = useState(0);
+	useEffect(() => {
+		const audio = audioElement();
+		if (!audio) return;
+		const onTime = () => setTime(audio.currentTime);
+		const onMeta = () => setLength(audio.duration);
+		audio.addEventListener("timeupdate", onTime);
+		audio.addEventListener("loadedmetadata", onMeta);
+		return () => {
+			audio.removeEventListener("timeupdate", onTime);
+			audio.removeEventListener("loadedmetadata", onMeta);
+		};
+	}, [songKey]);
+	return { time, length };
+}
+
+const seek = ([seconds]: number[]) => {
+	const audio = audioElement();
+	if (audio) audio.currentTime = seconds;
 };
 
-export const PlaybackControls = () => {
+function IconButton({ icon: Icon, label, className = "", ...props }: { icon: LucideIcon; label: string } & React.ComponentProps<typeof Button>) {
+	return (
+		<Button size='icon' variant='ghost' aria-label={label} title={label} className={`text-zinc-400 hover:text-white ${className}`} {...props}>
+			<Icon className='h-4 w-4' />
+		</Button>
+	);
+}
+
+/** The bottom bar: now playing, transport controls with a seek bar, and volume. */
+export function PlaybackControls() {
 	const { currentSong, isPlaying, togglePlay, playNext, playPrevious } = usePlayerStore();
-
+	const { time, length } = useProgress(currentSong);
 	const [volume, setVolume] = useState(75);
-	const [currentTime, setCurrentTime] = useState(0);
-	const [duration, setDuration] = useState(0);
-	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const nothingLoaded = !currentSong;
 
-	useEffect(() => {
-		audioRef.current = document.querySelector("audio");
-
-		const audio = audioRef.current;
-		if (!audio) return;
-
-		const updateTime = () => setCurrentTime(audio.currentTime);
-		const updateDuration = () => setDuration(audio.duration);
-
-		audio.addEventListener("timeupdate", updateTime);
-		audio.addEventListener("loadedmetadata", updateDuration);
-
-		const handleEnded = () => {
-			usePlayerStore.setState({ isPlaying: false });
-		};
-
-		audio.addEventListener("ended", handleEnded);
-
-		return () => {
-			audio.removeEventListener("timeupdate", updateTime);
-			audio.removeEventListener("loadedmetadata", updateDuration);
-			audio.removeEventListener("ended", handleEnded);
-		};
-	}, [currentSong]);
-
-	const handleSeek = (value: number[]) => {
-		if (audioRef.current) {
-			audioRef.current.currentTime = value[0];
-		}
+	const changeVolume = ([value]: number[]) => {
+		setVolume(value);
+		const audio = audioElement();
+		if (audio) audio.volume = value / 100;
 	};
 
+	const seekBar = (className: string) => (
+		<Slider value={[time]} max={length || 100} step={1} className={className} onValueChange={seek} aria-label='Seek' />
+	);
+
 	return (
-		<footer className='sm:h-24 bg-black/45 border-t border-white/[0.06] px-4 py-2 sm:py-0'>
-			<div className='flex flex-wrap sm:flex-nowrap justify-between items-center content-center gap-x-2 gap-y-1 sm:gap-0 h-full max-w-[1800px] mx-auto'>
-				{/* currently playing song */}
-				<div className='flex items-center gap-3 sm:gap-4 flex-1 min-w-0 sm:flex-none sm:min-w-[180px] sm:w-[30%]'>
+		<footer className='border-t border-white/[0.06] bg-black/45 px-4 py-2 sm:h-24 sm:py-0'>
+			<div className='mx-auto flex h-full max-w-[1800px] flex-wrap content-center items-center justify-between gap-x-2 gap-y-1 sm:flex-nowrap sm:gap-0'>
+				{/* Now playing */}
+				<div className='flex min-w-0 flex-1 items-center gap-3 sm:w-[30%] sm:min-w-[180px] sm:flex-none sm:gap-4'>
 					{currentSong && (
 						<>
-							<img
-								src={currentSong.imageUrl}
-								alt={currentSong.title}
-								className='w-10 h-10 sm:w-14 sm:h-14 object-cover rounded-md'
-							/>
-							<div className='flex-1 min-w-0'>
-								<div className='font-medium truncate hover:underline cursor-pointer'>
-									{currentSong.title}
-								</div>
-								<div className='text-sm text-zinc-400 truncate hover:underline cursor-pointer'>
-									{currentSong.artist}
-								</div>
+							<img src={currentSong.imageUrl} alt={currentSong.title} className='h-10 w-10 rounded-md object-cover sm:h-14 sm:w-14' />
+							<div className='min-w-0 flex-1'>
+								<p className='truncate font-medium'>{currentSong.title}</p>
+								<p className='truncate text-sm text-zinc-400'>{currentSong.artist}</p>
 							</div>
 							<div className='hidden md:block'>
 								<Waveform />
@@ -77,112 +78,56 @@ export const PlaybackControls = () => {
 					)}
 				</div>
 
-				{/* player controls*/}
-				{/* on mobile, pl-16 (waveform 56px + gap 8px) centers the buttons under the progress bar */}
+				{/* Transport. On phones, pl-16 (waveform 56px + 8px gap) centers the buttons under the progress bar. */}
 				<div
-					className={`flex flex-col items-center gap-2 w-full order-last sm:order-none sm:w-auto sm:flex-1 max-w-full sm:max-w-[45%] sm:pl-0 ${currentSong ? "pl-16" : ""}`}
+					className={`order-last flex w-full max-w-full flex-col items-center gap-2 sm:order-none sm:w-auto sm:max-w-[45%] sm:flex-1 sm:pl-0 ${currentSong ? "pl-16" : ""}`}
 				>
 					<div className='flex items-center gap-1 sm:gap-6'>
+						<IconButton icon={Shuffle} label='Shuffle' className='hidden sm:inline-flex' />
+						<IconButton icon={SkipBack} label='Previous' onClick={playPrevious} disabled={nothingLoaded} />
 						<Button
 							size='icon'
-							variant='ghost'
-							className='hidden sm:inline-flex hover:text-white text-zinc-400'
-						>
-							<Shuffle className='h-4 w-4' />
-						</Button>
-
-						<Button
-							size='icon'
-							variant='ghost'
-							className='hover:text-white text-zinc-400'
-							onClick={playPrevious}
-							disabled={!currentSong}
-						>
-							<SkipBack className='h-4 w-4' />
-						</Button>
-
-						<Button
-							size='icon'
-							className='bg-white hover:bg-white/80 text-black rounded-full h-8 w-8'
+							aria-label={isPlaying ? "Pause" : "Play"}
+							className='h-8 w-8 rounded-full bg-white text-black hover:bg-white/80'
 							onClick={togglePlay}
-							disabled={!currentSong}
+							disabled={nothingLoaded}
 						>
 							{isPlaying ? <Pause className='h-5 w-5' /> : <Play className='h-5 w-5' />}
 						</Button>
-						<Button
-							size='icon'
-							variant='ghost'
-							className='hover:text-white text-zinc-400'
-							onClick={playNext}
-							disabled={!currentSong}
-						>
-							<SkipForward className='h-4 w-4' />
-						</Button>
-						<Button
-							size='icon'
-							variant='ghost'
-							className='hidden sm:inline-flex hover:text-white text-zinc-400'
-						>
-							<Repeat className='h-4 w-4' />
-						</Button>
+						<IconButton icon={SkipForward} label='Next' onClick={playNext} disabled={nothingLoaded} />
+						<IconButton icon={Repeat} label='Repeat' className='hidden sm:inline-flex' />
 					</div>
-
-					<div className='hidden sm:flex items-center gap-2 w-full'>
-						<div className='text-xs text-zinc-400'>{formatTime(currentTime)}</div>
-						<Slider
-							value={[currentTime]}
-							max={duration || 100}
-							step={1}
-							className='w-full hover:cursor-grab active:cursor-grabbing'
-							onValueChange={handleSeek}
-						/>
-						<div className='text-xs text-zinc-400'>{formatTime(duration)}</div>
+					<div className='hidden w-full items-center gap-2 sm:flex'>
+						<span className='text-xs text-zinc-400'>{clock(time)}</span>
+						{seekBar("w-full hover:cursor-grab active:cursor-grabbing")}
+						<span className='text-xs text-zinc-400'>{clock(length)}</span>
 					</div>
 				</div>
-				{/* volume controls */}
-				<div className='hidden sm:flex items-center gap-4 min-w-[180px] w-[30%] justify-end'>
-					<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-						<Mic2 className='h-4 w-4' />
-					</Button>
-					<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-						<ListMusic className='h-4 w-4' />
-					</Button>
-					<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-						<Laptop2 className='h-4 w-4' />
-					</Button>
 
+				{/* Extras and volume */}
+				<div className='hidden w-[30%] min-w-[180px] items-center justify-end gap-4 sm:flex'>
+					<IconButton icon={Mic2} label='Lyrics' />
+					<IconButton icon={ListMusic} label='Queue' />
+					<IconButton icon={Laptop2} label='Devices' />
 					<div className='flex items-center gap-2'>
-						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-							<Volume1 className='h-4 w-4' />
-						</Button>
-
+						<IconButton icon={Volume1} label='Volume' />
 						<Slider
 							value={[volume]}
 							max={100}
 							step={1}
 							className='w-24 hover:cursor-grab active:cursor-grabbing'
-							onValueChange={(value) => {
-								setVolume(value[0]);
-								if (audioRef.current) {
-									audioRef.current.volume = value[0] / 100;
-								}
-							}}
+							onValueChange={changeVolume}
+							aria-label='Volume'
 						/>
 					</div>
 				</div>
 
-				{/* mobile: waveform + progress on their own row */}
-				<div className='flex sm:hidden items-center gap-2 w-full h-6'>
+				{/* Phones: waveform and progress get their own row */}
+				<div className='flex h-6 w-full items-center gap-2 sm:hidden'>
 					{currentSong && <Waveform />}
-					<Slider
-						value={[currentTime]}
-						max={duration || 100}
-						step={1}
-						className='w-full'
-						onValueChange={handleSeek}
-					/>
+					{seekBar("w-full")}
 				</div>
 			</div>
 		</footer>
 	);
-};
+}

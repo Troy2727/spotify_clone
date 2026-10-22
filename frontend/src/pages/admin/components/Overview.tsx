@@ -1,4 +1,4 @@
-import { formatDuration } from "@/pages/album/AlbumPage";
+import { formatDuration } from "@/lib/format";
 import { useMusicStore } from "@/stores/useMusicStore";
 import CoverPlayButton from "./CoverPlayButton";
 import DashboardStats from "./DashboardStats";

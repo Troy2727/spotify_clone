@@ -1,15 +1,15 @@
-import { axiosInstance } from "@/lib/axios";
 import { create } from "zustand";
+import { axiosInstance } from "@/lib/axios";
 
 interface AuthStore {
 	isAdmin: boolean;
 	isLoading: boolean;
 	error: string | null;
-
 	checkAdminStatus: () => Promise<void>;
 	reset: () => void;
 }
 
+/** Whether the signed-in user may open the admin dashboard (the server decides). */
 export const useAuthStore = create<AuthStore>((set) => ({
 	isAdmin: false,
 	isLoading: false,
@@ -17,23 +17,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
 	checkAdminStatus: async () => {
 		set({ isLoading: true, error: null });
-		console.log("Checking admin status...");
-
 		try {
-			const response = await axiosInstance.get("/admin/check");
-			console.log("Admin check response:", response.data);
-			set({ isAdmin: response.data.admin });
-			console.log("Admin status set to:", response.data.admin);
-		} catch (error: any) {
-			console.error("Admin check error:", error);
-			console.error("Error response:", error.response?.data || "No response data");
-			set({ isAdmin: false, error: error.response?.data?.message || "Error checking admin status" });
+			const { data } = await axiosInstance.get<{ admin: boolean }>("/admin/check");
+			set({ isAdmin: data.admin });
+		} catch (error) {
+			const reason = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+			set({ isAdmin: false, error: reason ?? "Error checking admin status" });
 		} finally {
 			set({ isLoading: false });
 		}
 	},
 
-	reset: () => {
-		set({ isAdmin: false, isLoading: false, error: null });
-	},
+	reset: () => set({ isAdmin: false, isLoading: false, error: null }),
 }));

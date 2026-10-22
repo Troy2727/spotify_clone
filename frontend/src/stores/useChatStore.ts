@@ -1,34 +1,65 @@
-import { axiosInstance } from "@/lib/axios";
-import { Message, User } from "@/types";
+import { io, Socket } from "socket.io-client";
 import { create } from "zustand";
-import { io } from "socket.io-client";
+import { axiosInstance } from "@/lib/axios";
 import { DEMO_ACTIVITIES, DEMO_FRIENDS, DEMO_ONLINE, addDemoMessage, getDemoConversation, nextDemoReply } from "@/lib/demoChat";
 import { isDemoMode } from "@/lib/demoMode";
+import { Message, User } from "@/types";
 
-// Use environment variable or default to window location for production
-const getBaseURL = () => {
-	// In development, use the API URL from environment variables
-	if (import.meta.env.DEV && import.meta.env.VITE_API_URL) {
-		// Extract the base URL without the /api suffix
-		const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
-		console.log('Using base URL for socket connection:', baseUrl);
-		return baseUrl;
-	}
+/** True on the Vercel demo, where friends and replies are simulated (lib/demoChat). */
+export const isVercelProduction = isDemoMode;
 
-	// In production, use the current origin
-	const origin = window.location.origin;
-	console.log('Using origin for socket connection:', origin);
-	return origin;
+/** What the stores need from a socket; the demo uses a do-nothing stand-in. */
+type ChatSocket = Pick<Socket, "connected" | "connect" | "disconnect" | "emit" | "on" | "off"> & { auth?: unknown };
+
+const offlineSocket: ChatSocket = {
+	connected: false,
+	connect: () => offlineSocket as Socket,
+	disconnect: () => offlineSocket as Socket,
+	emit: () => offlineSocket as Socket,
+	on: () => offlineSocket as Socket,
+	off: () => offlineSocket as Socket,
 };
 
-// Check if we're in Vercel production environment
-export const isVercelProduction = isDemoMode;
+/** The Socket.IO server: the API's origin in development, this site's origin otherwise. */
+function serverUrl() {
+	const api = import.meta.env.VITE_API_URL as string | undefined;
+	return import.meta.env.DEV && api ? api.replace(/\/api\/?$/, "") : window.location.origin;
+}
+
+const socket: ChatSocket = isDemoMode()
+	? offlineSocket
+	: io(serverUrl(), {
+			autoConnect: false, // connect once we know who the user is
+			withCredentials: true,
+			reconnectionAttempts: 10,
+			reconnectionDelay: 1000,
+			timeout: 20000,
+			transports: ["websocket", "polling"],
+		});
+
+// Server events this store listens to; removed and re-added on every (re)connect.
+const SERVER_EVENTS = [
+	"connect",
+	"connect_error",
+	"reconnect",
+	"users_online",
+	"activities",
+	"user_connected",
+	"user_disconnected",
+	"receive_message",
+	"message_sent",
+	"message_error",
+	"activity_updated",
+];
+
+/** Signed-in user's Clerk id, so demo conversations know which side is "you". */
+let demoSelfId = "";
 
 interface ChatStore {
 	users: User[];
 	isLoading: boolean;
 	error: string | null;
-	socket: any;
+	socket: ChatSocket;
 	isConnected: boolean;
 	onlineUsers: Set<string>;
 	userActivities: Map<string, string>;
@@ -43,64 +74,14 @@ interface ChatStore {
 	setSelectedUser: (user: User | null) => void;
 }
 
-// Signed-in user's Clerk id, so demo conversations know which side "you" are on
-let demoSelfId = "";
-
-// Initialize socket with dynamic configuration, but only if not in Vercel production
-let socket;
-if (!isVercelProduction()) {
-	const socketURL = getBaseURL();
-	console.log('Initializing socket with URL:', socketURL);
-
-	try {
-		// Force using the explicit URL with no path transformation
-		socket = io(socketURL, {
-			autoConnect: false, // only connect if user is authenticated
-			withCredentials: true,
-			path: '/socket.io', // Default path for socket.io
-			reconnectionAttempts: 10,
-			reconnectionDelay: 1000,
-			timeout: 20000,
-			transports: ['websocket', 'polling'], // Try WebSocket first, then fall back to polling
-			forceNew: true // Force a new connection
-		});
-
-		// Log socket state
-		console.log('Socket initialized with options:', {
-			url: socketURL,
-			connected: socket.connected,
-			id: socket.id
-		});
-	} catch (error) {
-		console.error('Error initializing socket:', error);
-		// Fallback to mock socket
-		socket = createMockSocket();
-	}
-} else {
-	// Create a dummy socket for Vercel production
-	console.log('Running in Vercel production - using mock socket');
-	socket = createMockSocket();
-}
-
-// Helper function to create a mock socket
-function createMockSocket() {
-	return {
-		connected: false,
-		on: () => {},
-		emit: () => {},
-		connect: () => {
-			console.log('Mock socket connected');
-			return true;
-		},
-		disconnect: () => {},
-	};
-}
+const apiError = (error: unknown, fallback: string) =>
+	(error as { response?: { data?: { message?: string } } }).response?.data?.message ?? fallback;
 
 export const useChatStore = create<ChatStore>((set, get) => ({
 	users: [],
 	isLoading: false,
 	error: null,
-	socket: socket,
+	socket,
 	isConnected: false,
 	onlineUsers: new Set(),
 	userActivities: new Map(),
@@ -110,278 +91,92 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 	setSelectedUser: (user) => set({ selectedUser: user }),
 
 	fetchUsers: async () => {
-		console.log("Fetching users...");
+		if (isDemoMode()) return set({ users: DEMO_FRIENDS });
 		set({ isLoading: true, error: null });
-
-		// If we're in Vercel production, use mock users
-		if (isVercelProduction()) {
-			console.log("Running in Vercel production - using mock users");
-			set({ users: DEMO_FRIENDS });
-			set({ isLoading: false });
-			return;
-		}
-
 		try {
-			const response = await axiosInstance.get("/users");
-			console.log("Users fetched successfully:", response.data);
-			set({ users: response.data });
-		} catch (error: any) {
-			console.error("Error fetching users:", error);
-			// Don't show error to user in production
-			if (import.meta.env.DEV) {
-				set({ error: error.response?.data?.message || "Failed to fetch users" });
-			}
-			// Use mock users on error
-			set({ users: DEMO_FRIENDS });
+			set({ users: (await axiosInstance.get("/users")).data });
+		} catch (error) {
+			console.error("Loading users failed:", error);
+			if (import.meta.env.DEV) set({ error: apiError(error, "Failed to fetch users") });
+			set({ users: DEMO_FRIENDS }); // something to show instead of an empty sidebar
 		} finally {
 			set({ isLoading: false });
 		}
 	},
 
 	initSocket: (userId) => {
-		console.log("initSocket called with userId:", userId);
-
-		// If we're in Vercel production, don't actually connect
-		if (isVercelProduction()) {
-			console.log("Running in Vercel production - skipping socket connection");
+		if (isDemoMode()) {
 			demoSelfId = userId;
-			// Set mock online users and listening activity for better UI experience
-			set({
-				isConnected: true,
-				onlineUsers: DEMO_ONLINE,
-				userActivities: DEMO_ACTIVITIES
-			});
-			return;
+			return set({ isConnected: true, onlineUsers: DEMO_ONLINE, userActivities: DEMO_ACTIVITIES });
 		}
+		if (get().isConnected && socket.connected) return;
 
-		// If already connected, don't reconnect
-		if (get().isConnected && socket.connected) {
-			console.log("Socket already connected, skipping reconnection");
-			return;
-		}
+		// Start clean: drop a half-open connection and any listeners from a previous call.
+		socket.disconnect();
+		SERVER_EVENTS.forEach((event) => socket.off(event));
+		socket.auth = { userId };
 
-		// Force disconnect if socket exists but is in a bad state
-		if (socket && typeof socket.disconnect === 'function') {
-			console.log("Forcing socket disconnect before reconnecting");
-			try {
-				socket.disconnect();
-			} catch (e) {
-				console.error("Error during forced disconnect:", e);
-			}
-		}
-
-		// Remove any existing listeners to prevent duplicates
-		if (socket && typeof socket.off === 'function') {
-			console.log("Removing existing socket listeners");
-			socket.off("connect");
-			socket.off("connect_error");
-			socket.off("disconnect");
-			socket.off("reconnect");
-			socket.off("reconnect_attempt");
-			socket.off("reconnect_error");
-			socket.off("reconnect_failed");
-			socket.off("users_online");
-			socket.off("activities");
-			socket.off("user_connected");
-			socket.off("user_disconnected");
-			socket.off("receive_message");
-			socket.off("message_sent");
-			socket.off("message_error");
-			socket.off("activity_updated");
-		}
-
-		// Set authentication
-		if (socket) {
-			socket.auth = { userId };
-			console.log("Setting socket auth:", socket.auth);
-		}
-
-		// Try to connect
-		try {
-			console.log("Attempting to connect socket...");
-			socket.connect();
-
-			// Log connection attempt
-			console.log("Socket connection initiated, current state:", {
-				connected: socket.connected,
-				id: socket.id,
-				auth: socket.auth
-			});
-		} catch (error) {
-			console.error("Error connecting socket:", error);
-			// Use fallback data
-			set({
-				isConnected: true,
-				onlineUsers: new Set(['test_user_1', 'test_user_2'])
-			});
-			return;
-		}
-
-		// Set up connection event listeners
+		const update = (fn: (state: ChatStore) => Partial<ChatStore>) => set(fn);
 		socket.on("connect", () => {
-			console.log("Socket connected successfully:", {
-				id: socket.id,
-				connected: socket.connected
-			});
-
-			// Emit user_connected event to server
-			try {
-				socket.emit("user_connected", userId);
-				console.log("Emitted user_connected event with userId:", userId);
-			} catch (e) {
-				console.error("Error emitting user_connected event:", e);
-			}
-
+			socket.emit("user_connected", userId);
 			set({ isConnected: true });
 		});
+		socket.on("reconnect", () => socket.emit("user_connected", userId));
+		socket.on("connect_error", (error: Error) => console.error("Chat connection failed:", error.message));
+		socket.on("message_error", (error: string) => console.error("Chat server rejected a message:", error));
 
-		socket.on("connect_error", (error) => {
-			console.error("Socket connection error:", error);
-			// If connection fails, set mock online users for better UI experience
-			set({
-				onlineUsers: new Set(['test_user_1', 'test_user_2'])
-			});
-		});
+		socket.on("users_online", (ids: string[]) => set({ onlineUsers: new Set(ids) }));
+		socket.on("user_connected", (id: string) => update((s) => ({ onlineUsers: new Set(s.onlineUsers).add(id) })));
+		socket.on("user_disconnected", (id: string) =>
+			update((s) => {
+				const online = new Set(s.onlineUsers);
+				online.delete(id);
+				return { onlineUsers: online };
+			}),
+		);
 
-		socket.on("disconnect", (reason) => {
-			console.log("Socket disconnected:", reason);
-			// Don't set isConnected to false to prevent UI flicker during reconnects
-		});
+		socket.on("activities", (entries: [string, string][]) => set({ userActivities: new Map(entries) }));
+		socket.on("activity_updated", ({ userId: id, activity }: { userId: string; activity: string }) =>
+			update((s) => ({ userActivities: new Map(s.userActivities).set(id, activity) })),
+		);
 
-		socket.on("reconnect_attempt", (attemptNumber) => {
-			console.log(`Socket reconnection attempt #${attemptNumber}`);
-		});
+		// Our own sent messages come back as "message_sent"; others' arrive as "receive_message".
+		const append = (message: Message) => update((s) => ({ messages: [...s.messages, message] }));
+		socket.on("receive_message", append);
+		socket.on("message_sent", append);
 
-		socket.on("reconnect", (attemptNumber) => {
-			console.log(`Socket reconnected after ${attemptNumber} attempts`);
-			// Re-emit user_connected after reconnection
-			socket.emit("user_connected", userId);
-		});
-
-		// Set up application event listeners
-		socket.on("users_online", (users: string[]) => {
-			console.log("Received online users:", users);
-			set({ onlineUsers: new Set(users) });
-		});
-
-		socket.on("activities", (activities: [string, string][]) => {
-			console.log("Received user activities:", activities);
-			set({ userActivities: new Map(activities) });
-		});
-
-		socket.on("user_connected", (userId: string) => {
-			console.log("User connected:", userId);
-			set((state) => ({
-				onlineUsers: new Set([...state.onlineUsers, userId]),
-			}));
-		});
-
-		socket.on("user_disconnected", (userId: string) => {
-			console.log("User disconnected:", userId);
-			set((state) => {
-				const newOnlineUsers = new Set(state.onlineUsers);
-				newOnlineUsers.delete(userId);
-				return { onlineUsers: newOnlineUsers };
-			});
-		});
-
-		socket.on("receive_message", (message: Message) => {
-			console.log("Received message:", message);
-			set((state) => ({
-				messages: [...state.messages, message],
-			}));
-		});
-
-		socket.on("message_sent", (message: Message) => {
-			console.log("Message sent confirmation:", message);
-			set((state) => ({
-				messages: [...state.messages, message],
-			}));
-		});
-
-		socket.on("message_error", (error: string) => {
-			console.error("Message error from server:", error);
-		});
-
-		socket.on("activity_updated", ({ userId, activity }) => {
-			console.log("Activity updated:", { userId, activity });
-			set((state) => {
-				const newActivities = new Map(state.userActivities);
-				newActivities.set(userId, activity);
-				return { userActivities: newActivities };
-			});
-		});
-
-		// Set connected state
+		socket.connect();
 		set({ isConnected: socket.connected });
 	},
 
 	disconnectSocket: () => {
-		if (get().isConnected) {
-			socket.disconnect();
-			set({ isConnected: false });
-		}
+		if (!get().isConnected) return;
+		socket.disconnect();
+		set({ isConnected: false });
 	},
 
-	sendMessage: async (receiverId, senderId, content) => {
-		console.log("Sending message:", { receiverId, senderId, content });
-
-		// If we're in Vercel production, create a mock message instead of using socket
-		if (isVercelProduction()) {
-			console.log("Running in Vercel production - creating mock message");
-			const mockMessage = addDemoMessage(receiverId, senderId, receiverId, content);
-			set((state) => ({
-				messages: [...state.messages, mockMessage]
-			}));
-
-			// The simulated friend replies shortly after
+	sendMessage: (receiverId, senderId, content) => {
+		if (isDemoMode()) {
+			set((s) => ({ messages: [...s.messages, addDemoMessage(receiverId, senderId, receiverId, content)] }));
+			// The simulated friend answers a moment later, if that chat is still open.
 			setTimeout(() => {
 				const reply = addDemoMessage(receiverId, receiverId, senderId, nextDemoReply());
-				if (get().selectedUser?.clerkId === receiverId) {
-					set((state) => ({ messages: [...state.messages, reply] }));
-				}
+				if (get().selectedUser?.clerkId === receiverId) set((s) => ({ messages: [...s.messages, reply] }));
 			}, 1500);
-
 			return;
 		}
-
-		const socket = get().socket;
-		if (!socket) {
-			console.error("Socket not available for sending message");
-			return;
-		}
-		if (!socket.connected) {
-			console.error("Socket not connected. Attempting to reconnect...");
-			socket.connect();
-		}
-
+		if (!socket.connected) socket.connect();
 		socket.emit("send_message", { receiverId, senderId, content });
-		console.log("Message emit sent to socket");
 	},
 
-	fetchMessages: async (userId: string) => {
-		console.log("Fetching messages for userId:", userId);
+	fetchMessages: async (userId) => {
+		if (isDemoMode()) return set({ messages: getDemoConversation(userId, demoSelfId) });
 		set({ isLoading: true, error: null });
-
-		// If we're in Vercel production, use mock messages
-		if (isVercelProduction()) {
-			console.log("Running in Vercel production - using mock messages");
-			set({ messages: getDemoConversation(userId, demoSelfId) });
-			set({ isLoading: false });
-			return;
-		}
-
 		try {
-			const response = await axiosInstance.get(`/users/messages/${userId}`);
-			console.log("Messages fetched successfully:", response.data);
-			set({ messages: response.data });
-		} catch (error: any) {
-			console.error("Error fetching messages:", error);
-			// Don't show error to user in production
-			if (import.meta.env.DEV) {
-				set({ error: error.response?.data?.message || "Failed to fetch messages" });
-			}
-			// Use empty messages array on error
+			set({ messages: (await axiosInstance.get(`/users/messages/${userId}`)).data });
+		} catch (error) {
+			console.error("Loading messages failed:", error);
+			if (import.meta.env.DEV) set({ error: apiError(error, "Failed to fetch messages") });
 			set({ messages: [] });
 		} finally {
 			set({ isLoading: false });

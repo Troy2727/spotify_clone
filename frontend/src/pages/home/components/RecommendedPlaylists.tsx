@@ -1,95 +1,37 @@
 import { useMusicStore } from "@/stores/useMusicStore";
-import { usePlayerStore } from "@/stores/usePlayerStore";
-import { Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import PlayButton from "./PlayButton";
 
-const RecommendedPlaylists = () => {
+const GRID = "mb-8 grid grid-cols-1 gap-2 xs:grid-cols-2 sm:gap-4 md:grid-cols-3";
+
+/** Six compact cards of featured songs at the top of the home page. */
+export default function RecommendedPlaylists() {
 	const { isLoading, featuredSongs } = useMusicStore();
-	const { setCurrentSong } = usePlayerStore();
-
-	// Create playlist data to match the second screenshot
-	const playlists = [
-		{
-			id: 1,
-			title: "Believer",
-			artist: "Imagine Dragons",
-			imageUrl: "/cover-images/17.jpg",
-		},
-		{
-			id: 2,
-			title: "Burn",
-			artist: "Usher",
-			imageUrl: "/cover-images/15.jpg",
-		},
-		{
-			id: 3,
-			title: "Uprising",
-			artist: "Muse",
-			imageUrl: "/cover-images/3.jpg",
-		},
-		{
-			id: 4,
-			title: "New Americana",
-			artist: "Halsey",
-			imageUrl: "/cover-images/5.jpg",
-		},
-		{
-			id: 5,
-			title: "Dancing Queen",
-			artist: "ABBA",
-			imageUrl: "/cover-images/14.jpg",
-		},
-		{
-			id: 6,
-			title: "Venom",
-			artist: "Eminem",
-			imageUrl: "/cover-images/9.jpg",
-		},
-	];
 
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-8">
-				{Array.from({ length: 6 }).map((_, i) => (
-					<div key={i} className="bg-zinc-800/50 rounded-md h-20 animate-pulse" />
+			<div className={GRID} aria-busy>
+				{Array.from({ length: 6 }, (_, i) => (
+					<div key={i} className='h-20 animate-pulse rounded-md bg-zinc-800/50' />
 				))}
 			</div>
 		);
 	}
 
 	return (
-		<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-8">
-			{playlists.map((playlist) => (
-				<div
-					key={playlist.id}
-					className="flex items-center bg-zinc-800/50 rounded-md overflow-hidden
-					hover:bg-zinc-700/50 transition-colors group cursor-pointer relative"
+		<ul className={GRID}>
+			{featuredSongs.slice(0, 6).map((song) => (
+				<li
+					key={song._id}
+					className='group relative flex items-center overflow-hidden rounded-md bg-zinc-800/50 transition-colors hover:bg-zinc-700/50'
 				>
-					<img
-						src={playlist.imageUrl}
-						alt={playlist.title}
-						className="w-12 sm:w-20 h-12 sm:h-20 object-cover flex-shrink-0"
-					/>
-					<div className="flex-1 min-w-0 px-2 sm:p-4">
-						<p className="font-medium truncate">{playlist.title}</p>
-						<p className="text-sm text-zinc-400 truncate">{playlist.artist}</p>
+					<img src={song.imageUrl} alt={song.title} className='h-12 w-12 flex-shrink-0 object-cover sm:h-20 sm:w-20' />
+					<div className='min-w-0 flex-1 px-2 sm:p-4'>
+						<p className='truncate font-medium'>{song.title}</p>
+						<p className='truncate text-sm text-zinc-400'>{song.artist}</p>
 					</div>
-					<Button
-						size="icon"
-						className="absolute bottom-3 right-2 bg-green-500 hover:bg-green-400 hover:scale-105 transition-all
-						opacity-0 translate-y-2 group-hover:translate-y-0 group-hover:opacity-100"
-						onClick={() => {
-							if (featuredSongs.length > 0) {
-								setCurrentSong(featuredSongs[0]);
-							}
-						}}
-					>
-						<Play className="size-5 text-black" />
-					</Button>
-				</div>
+					<PlayButton song={song} />
+				</li>
 			))}
-		</div>
+		</ul>
 	);
-};
-
-export default RecommendedPlaylists;
+}

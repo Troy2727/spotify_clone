@@ -143,8 +143,7 @@ VITE_CLERK_PUBLISHABLE_KEY=<pk_...>
 
 ```bash
 cd backend
-npm run seed:songs
-npm run seed:albums
+npm run seed   # loads the same catalog the live demo serves (api/)
 ```
 
 ### 4. Run
@@ -230,6 +229,8 @@ Every pull request runs:
 ## 👨‍💻 Author
 
 **Alex Mieses** — [@Troy2727](https://github.com/Troy2727)
+
+This project began as Burak Orkmez's [realtime-spotify-clone](https://github.com/burakorkmez/realtime-spotify-clone) MERN course project. The codebase has since been rewritten, and the Vercel demo catalog, demo mode, the mobile player and layout, and the server-side checks on chat senders and sign-up were built for this version.
 
 ## 📄 License
 

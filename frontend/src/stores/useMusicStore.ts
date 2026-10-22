@@ -1,25 +1,26 @@
-import { axiosInstance } from "@/lib/axios";
-import { isDemoMode } from "@/lib/demoMode";
-import { Album, Song, Stats } from "@/types";
 import toast from "react-hot-toast";
 import { create } from "zustand";
+import { axiosInstance } from "@/lib/axios";
+import { isDemoMode } from "@/lib/demoMode";
+import { FALLBACK_ALBUMS, FALLBACK_FEATURED, FALLBACK_MADE_FOR_YOU, FALLBACK_TRENDING } from "@/lib/fallbackCatalog";
+import { Album, Song, Stats } from "@/types";
 
-// Session-only catalog edits for the live demo (no database there). Kept outside the store and
-// re-applied after every fetch, so refetching (switching tabs, revisiting pages) doesn't undo them.
-const demoEdits = { songs: [] as Song[], albums: [] as Album[], deleted: new Set<string>() };
+// The live demo has no database, so admin edits there are kept for the session only.
+// They live outside the store and are re-applied after every fetch, so refetching
+// (switching tabs, revisiting a page) doesn't undo them.
+const demo = { songs: [] as Song[], albums: [] as Album[], deleted: new Set<string>() };
 
-const applyDemoSongs = (songs: Song[]) =>
-	[...demoEdits.songs, ...songs].filter((song) => !demoEdits.deleted.has(song._id));
+const withDemoSongs = (songs: Song[]) => [...demo.songs, ...songs].filter((s) => !demo.deleted.has(s._id));
 
-const applyDemoAlbums = (albums: Album[]) =>
-	[...demoEdits.albums, ...albums]
-		.filter((album) => !demoEdits.deleted.has(album._id))
-		.map((album) => ({
-			...album,
-			songs: [...album.songs, ...demoEdits.songs.filter((song) => song.albumId === album._id)].filter(
-				(song) => !demoEdits.deleted.has(song._id)
-			),
+const withDemoAlbums = (albums: Album[]) =>
+	[...demo.albums, ...albums]
+		.filter((a) => !demo.deleted.has(a._id))
+		.map((a) => ({
+			...a,
+			songs: [...a.songs, ...demo.songs.filter((s) => s.albumId === a._id)].filter((s) => !demo.deleted.has(s._id)),
 		}));
+
+const message = (error: unknown) => (error as { message?: string })?.message ?? "Request failed";
 
 interface MusicStore {
 	songs: Song[];
@@ -45,388 +46,135 @@ interface MusicStore {
 	addDemoAlbum: (album: Album) => void;
 }
 
-export const useMusicStore = create<MusicStore>((set, get) => ({
-	albums: [],
-	songs: [],
-	isLoading: false,
-	error: null,
-	currentAlbum: null,
-	madeForYouSongs: [],
-	featuredSongs: [],
-	trendingSongs: [],
-	stats: {
-		totalSongs: 0,
-		totalAlbums: 0,
-		totalUsers: 0,
-		totalArtists: 0,
-	},
+type Lists = Pick<MusicStore, "songs" | "albums" | "featuredSongs" | "madeForYouSongs" | "trendingSongs">;
 
-	addDemoSong: (song) => {
-		demoEdits.songs.unshift(song);
-		set((state) => ({
-			songs: [song, ...state.songs],
-			albums: state.albums.map((album) =>
-				album._id === song.albumId ? { ...album, songs: [...album.songs, song] } : album
+export const useMusicStore = create<MusicStore>((set, get) => {
+	/**
+	 * GET `url` into `key`. If it fails and a fallback is given, show the fallback
+	 * instead (the error is only surfaced in development, so visitors never see it).
+	 */
+	async function load<K extends keyof Lists>(key: K, url: string, fallback?: Lists[K], adjust = (v: Lists[K]) => v) {
+		set({ isLoading: true, error: null });
+		try {
+			const { data } = await axiosInstance.get(url);
+			set({ [key]: adjust(data) } as Partial<MusicStore>);
+		} catch (error) {
+			console.error(`Loading ${url} failed:`, error);
+			if (!fallback) set({ error: message(error) });
+			else {
+				set({ [key]: adjust(fallback) } as Partial<MusicStore>);
+				if (import.meta.env.DEV) set({ error: `Could not load ${url}; showing fallback data.` });
+			}
+		} finally {
+			set({ isLoading: false });
+		}
+	}
+
+	/** Run a delete (real or demo), then report the outcome as a toast. */
+	async function remove(work: () => Promise<void> | void, done: string, failed: (e: unknown) => string) {
+		set({ isLoading: true, error: null });
+		try {
+			await work();
+			toast.success(isDemoMode() ? `${done} (demo, resets on reload)` : `${done} successfully`);
+		} catch (error) {
+			console.error(failed(error), error);
+			toast.error(failed(error));
+		} finally {
+			set({ isLoading: false });
+		}
+	}
+
+	return {
+		songs: [],
+		albums: [],
+		isLoading: false,
+		error: null,
+		currentAlbum: null,
+		featuredSongs: [],
+		madeForYouSongs: [],
+		trendingSongs: [],
+		stats: { totalSongs: 0, totalAlbums: 0, totalUsers: 0, totalArtists: 0 },
+
+		fetchSongs: () => load("songs", "/songs", undefined, (s) => (isDemoMode() ? withDemoSongs(s) : s)),
+		fetchAlbums: () => load("albums", "/albums", FALLBACK_ALBUMS, (a) => (isDemoMode() ? withDemoAlbums(a) : a)),
+		fetchFeaturedSongs: () => load("featuredSongs", "/songs/featured", FALLBACK_FEATURED),
+		fetchMadeForYouSongs: () => load("madeForYouSongs", "/songs/made-for-you", FALLBACK_MADE_FOR_YOU),
+		fetchTrendingSongs: () => load("trendingSongs", "/songs/trending", FALLBACK_TRENDING),
+
+		fetchStats: async () => {
+			set({ isLoading: true, error: null });
+			try {
+				set({ stats: (await axiosInstance.get("/stats")).data });
+			} catch (error) {
+				set({ error: message(error) });
+			} finally {
+				set({ isLoading: false });
+			}
+		},
+
+		fetchAlbumById: async (id) => {
+			set({ isLoading: true, error: null });
+			try {
+				if (isDemoMode()) {
+					// Albums created in the demo exist only in this session.
+					const local = withDemoAlbums([]).find((a) => a._id === id);
+					if (local) return set({ currentAlbum: local });
+					if (demo.deleted.has(id)) return set({ currentAlbum: null, error: "Album not found" });
+				}
+				const { data } = await axiosInstance.get(`/albums/${id}`);
+				set({ currentAlbum: isDemoMode() ? withDemoAlbums([data])[0] : data });
+			} catch (error) {
+				const response = (error as { response?: { data?: { message?: string } } }).response;
+				set({ error: response?.data?.message ?? message(error) });
+			} finally {
+				set({ isLoading: false });
+			}
+		},
+
+		addDemoSong: (song) => {
+			demo.songs.unshift(song);
+			set((state) => ({
+				songs: [song, ...state.songs],
+				albums: state.albums.map((a) => (a._id === song.albumId ? { ...a, songs: [...a.songs, song] } : a)),
+			}));
+		},
+
+		addDemoAlbum: (album) => {
+			demo.albums.unshift(album);
+			set((state) => ({ albums: [album, ...state.albums] }));
+		},
+
+		deleteSong: (id) =>
+			remove(
+				async () => {
+					if (isDemoMode()) demo.deleted.add(id);
+					else await axiosInstance.delete(`/admin/songs/${id}`);
+					set((state) => ({
+						songs: state.songs.filter((s) => s._id !== id),
+						albums: state.albums.map((a) => ({ ...a, songs: a.songs.filter((s) => s._id !== id) })),
+					}));
+				},
+				"Song deleted",
+				() => "Error deleting song",
 			),
-		}));
-	},
 
-	addDemoAlbum: (album) => {
-		demoEdits.albums.unshift(album);
-		set((state) => ({ albums: [album, ...state.albums] }));
-	},
-
-	deleteSong: async (id) => {
-		set({ isLoading: true, error: null });
-		try {
-			if (isDemoMode()) demoEdits.deleted.add(id);
-			else await axiosInstance.delete(`/admin/songs/${id}`);
-
-			set((state) => ({
-				songs: state.songs.filter((song) => song._id !== id),
-				albums: state.albums.map((album) => ({ ...album, songs: album.songs.filter((song) => song._id !== id) })),
-			}));
-			toast.success(isDemoMode() ? "Song removed (demo, resets on reload)" : "Song deleted successfully");
-		} catch (error: any) {
-			console.log("Error in deleteSong", error);
-			toast.error("Error deleting song");
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	deleteAlbum: async (id) => {
-		set({ isLoading: true, error: null });
-		try {
-			if (isDemoMode()) {
-				demoEdits.deleted.add(id);
-				get()
-					.songs.filter((song) => song.albumId === id)
-					.forEach((song) => demoEdits.deleted.add(song._id));
-			} else {
-				await axiosInstance.delete(`/admin/albums/${id}`);
-			}
-			// the backend deletes an album together with its songs
-			set((state) => ({
-				albums: state.albums.filter((album) => album._id !== id),
-				songs: state.songs.filter((song) => song.albumId !== id),
-			}));
-			toast.success(isDemoMode() ? "Album removed (demo, resets on reload)" : "Album deleted successfully");
-		} catch (error: any) {
-			toast.error("Failed to delete album: " + error.message);
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchSongs: async () => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axiosInstance.get("/songs");
-			set({ songs: isDemoMode() ? applyDemoSongs(response.data) : response.data });
-		} catch (error: any) {
-			set({ error: error.message });
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchStats: async () => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axiosInstance.get("/stats");
-			set({ stats: response.data });
-		} catch (error: any) {
-			set({ error: error.message });
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchAlbums: async () => {
-		set({ isLoading: true, error: null });
-
-		try {
-			const response = await axiosInstance.get("/albums");
-			set({ albums: isDemoMode() ? applyDemoAlbums(response.data) : response.data });
-		} catch (error: any) {
-			console.error("Error fetching albums:", error);
-			// Don't show error message to user for API failures in production
-			if (import.meta.env.DEV) {
-				set({ error: error.message || "Failed to fetch albums" });
-			}
-			// Use fallback data if API fails
-			const fallbackAlbums = [
-				{
-					_id: "album1",
-					title: "Confessions",
-					artist: "Usher",
-					imageUrl: "/cover-images/15.jpg",
-					releaseYear: 2004,
-					songs: []
+		deleteAlbum: (id) =>
+			remove(
+				async () => {
+					if (isDemoMode()) {
+						demo.deleted.add(id);
+						get().songs.filter((s) => s.albumId === id).forEach((s) => demo.deleted.add(s._id));
+					} else {
+						await axiosInstance.delete(`/admin/albums/${id}`);
+					}
+					// The backend deletes an album together with its songs; mirror that here.
+					set((state) => ({
+						albums: state.albums.filter((a) => a._id !== id),
+						songs: state.songs.filter((s) => s.albumId !== id),
+					}));
 				},
-				{
-					_id: "album2",
-					title: "Kamikaze",
-					artist: "Eminem",
-					imageUrl: "/cover-images/9.jpg",
-					releaseYear: 2018,
-					songs: []
-				},
-				{
-					_id: "album3",
-					title: "Illuminate",
-					artist: "Shawn Mendes",
-					imageUrl: "/cover-images/10.jpg",
-					releaseYear: 2016,
-					songs: []
-				},
-				{
-					_id: "album4",
-					title: "The Resistance",
-					artist: "Muse",
-					imageUrl: "/cover-images/3.jpg",
-					releaseYear: 2009,
-					songs: []
-				}
-			];
-			// Set the fallback data without showing an error in production
-			set({ albums: isDemoMode() ? applyDemoAlbums(fallbackAlbums) : fallbackAlbums });
-			if (import.meta.env.DEV) {
-				set({ error: "Could not fetch albums. Using fallback data." });
-			}
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchAlbumById: async (id) => {
-		set({ isLoading: true, error: null });
-		try {
-			if (isDemoMode()) {
-				// albums created in the demo only exist in this session
-				const demoAlbum = applyDemoAlbums([]).find((album) => album._id === id);
-				if (demoAlbum) return set({ currentAlbum: demoAlbum });
-				if (demoEdits.deleted.has(id)) return set({ currentAlbum: null, error: "Album not found" });
-			}
-			const response = await axiosInstance.get(`/albums/${id}`);
-			set({ currentAlbum: isDemoMode() ? applyDemoAlbums([response.data])[0] : response.data });
-		} catch (error: any) {
-			set({ error: error.response.data.message });
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchFeaturedSongs: async () => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axiosInstance.get("/songs/featured");
-			set({ featuredSongs: response.data });
-		} catch (error: any) {
-			console.error("Error fetching featured songs:", error);
-			// Don't show error message to user for API failures in production
-			if (import.meta.env.DEV) {
-				set({ error: error.message || "Failed to fetch featured songs" });
-			}
-			// Use fallback data if API fails
-			const fallbackSongs = [
-				{
-					_id: "featured1",
-					title: "Believer",
-					artist: "Imagine Dragons",
-					imageUrl: "/cover-images/17.jpg",
-					audioUrl: "/songs/1.mp3",
-					duration: 180,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "featured2",
-					title: "Burn",
-					artist: "Usher",
-					imageUrl: "/cover-images/15.jpg",
-					audioUrl: "/songs/2.mp3",
-					duration: 210,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "featured3",
-					title: "Uprising",
-					artist: "Muse",
-					imageUrl: "/cover-images/3.jpg",
-					audioUrl: "/songs/3.mp3",
-					duration: 195,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "featured4",
-					title: "New Americana",
-					artist: "Halsey",
-					imageUrl: "/cover-images/5.jpg",
-					audioUrl: "/songs/4.mp3",
-					duration: 225,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "featured5",
-					title: "Dancing Queen",
-					artist: "ABBA",
-					imageUrl: "/cover-images/14.jpg",
-					audioUrl: "/songs/5.mp3",
-					duration: 240,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "featured6",
-					title: "Venom",
-					artist: "Eminem",
-					imageUrl: "/cover-images/9.jpg",
-					audioUrl: "/songs/6.mp3",
-					duration: 200,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			];
-			// Set the fallback data without showing an error in production
-			set({ featuredSongs: fallbackSongs });
-			if (import.meta.env.DEV) {
-				set({ error: "Could not fetch featured songs. Using fallback data." });
-			}
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchMadeForYouSongs: async () => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axiosInstance.get("/songs/made-for-you");
-			set({ madeForYouSongs: response.data });
-		} catch (error: any) {
-			console.error("Error fetching made-for-you songs:", error);
-			// Don't show error message to user for API failures in production
-			if (import.meta.env.DEV) {
-				set({ error: error.message || "Failed to fetch made-for-you songs" });
-			}
-			// Use fallback data if API fails
-			const fallbackSongs = [
-				{
-					_id: "mfy1",
-					title: "Starboy",
-					artist: "The Weeknd",
-					imageUrl: "/cover-images/16.jpg",
-					audioUrl: "/songs/7.mp3",
-					duration: 230,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "mfy2",
-					title: "Enemy",
-					artist: "Imagine Dragons & JID",
-					imageUrl: "/cover-images/1.jpg",
-					audioUrl: "/songs/8.mp3",
-					duration: 215,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "mfy3",
-					title: "Yeah!",
-					artist: "Usher",
-					imageUrl: "/cover-images/15.jpg",
-					audioUrl: "/songs/9.mp3",
-					duration: 250,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "mfy4",
-					title: "Shape of You",
-					artist: "Ed Sheeran",
-					imageUrl: "/cover-images/4.jpg",
-					audioUrl: "/songs/10.mp3",
-					duration: 235,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			];
-			// Set the fallback data without showing an error in production
-			set({ madeForYouSongs: fallbackSongs });
-			if (import.meta.env.DEV) {
-				set({ error: "Could not fetch made-for-you songs. Using fallback data." });
-			}
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-
-	fetchTrendingSongs: async () => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axiosInstance.get("/songs/trending");
-			set({ trendingSongs: response.data });
-		} catch (error: any) {
-			console.error("Error fetching trending songs:", error);
-			// Don't show error message to user for API failures in production
-			if (import.meta.env.DEV) {
-				set({ error: error.message || "Failed to fetch trending songs" });
-			}
-			// Use fallback data if API fails
-			const fallbackSongs = [
-				{
-					_id: "trending1",
-					title: "Treat You Better",
-					artist: "Shawn Mendes",
-					imageUrl: "/cover-images/10.jpg",
-					audioUrl: "/songs/1.mp3",
-					duration: 240,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "trending2",
-					title: "Happier Than Ever",
-					artist: "Billie Eilish",
-					imageUrl: "/cover-images/11.jpg",
-					audioUrl: "/songs/2.mp3",
-					duration: 195,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "trending3",
-					title: "The Hills",
-					artist: "The Weeknd",
-					imageUrl: "/cover-images/12.jpg",
-					audioUrl: "/songs/3.mp3",
-					duration: 210,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				},
-				{
-					_id: "trending4",
-					title: "The Best",
-					artist: "AWOLNATION",
-					imageUrl: "/cover-images/13.jpg",
-					audioUrl: "/songs/4.mp3",
-					duration: 225,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString()
-				}
-			];
-			// Set the fallback data without showing an error in production
-			set({ trendingSongs: fallbackSongs });
-			if (import.meta.env.DEV) {
-				set({ error: "Could not fetch trending songs. Using fallback data." });
-			}
-		} finally {
-			set({ isLoading: false });
-		}
-	},
-}));
+				"Album deleted",
+				(e) => `Failed to delete album: ${message(e)}`,
+			),
+	};
+});

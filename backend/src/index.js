@@ -1,163 +1,74 @@
-import express from "express";
-import dotenv from "dotenv";
+// Local development server: the REST API, chat over Socket.IO, and (with
+// NODE_ENV=production) the built frontend. The live demo uses /api on Vercel instead.
+
+import "dotenv/config";
 import { clerkMiddleware } from "@clerk/express";
-import fileUpload from "express-fileupload";
-import path from "path";
 import cors from "cors";
-import fs from "fs";
-import { createServer } from "http";
+import express from "express";
+import fileUpload from "express-fileupload";
+import fs from "node:fs/promises";
+import { createServer } from "node:http";
+import path from "node:path";
 import cron from "node-cron";
-
-import { initializeSocket } from "./lib/socket.js";
-
+import api from "./api.js";
 import { connectDB } from "./lib/db.js";
-import userRoutes from "./routes/user.route.js";
-import adminRoutes from "./routes/admin.route.js";
-import authRoutes from "./routes/auth.route.js";
-import songRoutes from "./routes/song.route.js";
-import albumRoutes from "./routes/album.route.js";
-import statRoutes from "./routes/stat.route.js";
-import { User } from "./models/user.model.js";
+import { allowedOrigin } from "./lib/origins.js";
+import { initializeSocket } from "./lib/socket.js";
+import { User } from "./models/index.js";
 
-dotenv.config();
+const ROOT = path.resolve(); // the backend folder (npm scripts run here)
+const UPLOADS = path.join(ROOT, "tmp");
 
-const __dirname = path.resolve();
 const app = express();
-const PORT = process.env.PORT;
+const server = createServer(app);
+initializeSocket(server);
 
-const httpServer = createServer(app);
-initializeSocket(httpServer);
-
-// Configure CORS to allow requests from both localhost and Vercel deployment
-const allowedOrigins = [
-	"http://localhost:3000",
-	"http://localhost:3001",
-	"http://localhost:5173", // Vite default dev port
-	process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-	process.env.FRONTEND_URL || null
-].filter(Boolean); // Remove null values
-
-console.log("Allowed CORS origins:", allowedOrigins);
-
-// In development, allow all origins
-if (process.env.NODE_ENV === 'development') {
-	app.use(cors());
-	console.log("CORS: Allowing all origins in development mode");
-} else {
-	app.use(
-		cors({
-			origin: function(origin, callback) {
-				// Allow requests with no origin (like mobile apps, curl, etc.)
-				if (!origin) return callback(null, true);
-
-				if (allowedOrigins.length === 0 || allowedOrigins.indexOf(origin) !== -1) {
-					callback(null, true);
-				} else {
-					console.log("Blocked by CORS:", origin);
-					// In production, be more strict about origins
-					callback(new Error('Not allowed by CORS'));
-				}
-			},
-			credentials: true,
-		})
-	);
-}
-
-app.use(express.json()); // to parse req.body
-app.use(clerkMiddleware()); // this will add auth to req obj => req.auth
-app.use(
-	fileUpload({
-		useTempFiles: true,
-		tempFileDir: path.join(__dirname, "tmp"),
-		createParentPath: true,
-		limits: {
-			fileSize: 10 * 1024 * 1024, // 10MB  max file size
-		},
-	})
-);
-
-// cron jobs
-const tempDir = path.join(process.cwd(), "tmp");
-cron.schedule("0 * * * *", () => {
-	if (fs.existsSync(tempDir)) {
-		fs.readdir(tempDir, (err, files) => {
-			if (err) {
-				console.log("error", err);
-				return;
-			}
-			for (const file of files) {
-				fs.unlink(path.join(tempDir, file), (err) => {});
-			}
-		});
-	}
-});
-
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/songs", songRoutes);
-app.use("/api/albums", albumRoutes);
-app.use("/api/stats", statRoutes);
+app.use(cors({ origin: allowedOrigin(), credentials: true }));
+app.use(express.json());
+app.use(clerkMiddleware()); // sets req.auth from the Clerk session token
+app.use(fileUpload({ useTempFiles: true, tempFileDir: UPLOADS, createParentPath: true, limits: { fileSize: 10 * 1024 * 1024 } }));
+app.use("/api", api);
 
 if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname, "../frontend/dist")));
-	app.get("*", (req, res) => {
-		res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
-	});
+	const dist = path.join(ROOT, "../frontend/dist");
+	app.use(express.static(dist));
+	app.get("*", (_req, res) => res.sendFile(path.join(dist, "index.html")));
 }
 
-// error handler
-app.use((err, req, res, next) => {
+// eslint-disable-next-line no-unused-vars -- Express recognises error handlers by their 4 arguments
+app.use((err, _req, res, _next) => {
+	console.error(err);
 	res.status(500).json({ message: process.env.NODE_ENV === "production" ? "Internal server error" : err.message });
 });
 
-// Connect to MongoDB when the app starts
-connectDB().then(async () => {
-	// Create test users for chat functionality
-	try {
-		// Check if test users already exist
-		const testUser1 = await User.findOne({ clerkId: 'test_user_1' });
-		const testUser2 = await User.findOne({ clerkId: 'test_user_2' });
-
-		if (!testUser1) {
-			console.log("Creating test user 1...");
-			await User.create({
-				clerkId: 'test_user_1',
-				fullName: 'Test User 1',
-				imageUrl: 'https://via.placeholder.com/150'
-			});
-			console.log("Test user 1 created successfully");
-		}
-
-		if (!testUser2) {
-			console.log("Creating test user 2...");
-			await User.create({
-				clerkId: 'test_user_2',
-				fullName: 'Test User 2',
-				imageUrl: 'https://via.placeholder.com/150'
-			});
-			console.log("Test user 2 created successfully");
-		}
-	} catch (error) {
-		console.error("Error creating test users:", error);
-	}
+// Uploads go to Cloudinary; the temp copies are cleared every hour.
+cron.schedule("0 * * * *", async () => {
+	const files = await fs.readdir(UPLOADS).catch(() => []);
+	await Promise.all(files.map((file) => fs.unlink(path.join(UPLOADS, file)).catch(() => {})));
 });
 
-// Start the server with fallback ports if the primary port is in use
-const startServer = (port) => {
-	httpServer.listen(port)
-		.on('listening', () => {
-			console.log(`Server is running on port ${port}`);
-		})
-		.on('error', (err) => {
-			if (err.code === 'EADDRINUSE') {
-				console.log(`Port ${port} is busy, trying port ${port + 1}`);
-				startServer(port + 1);
-			} else {
-				console.error('Server error:', err);
-			}
-		});
-};
+/** Two contacts so chat has someone to talk to on a fresh database. */
+async function ensureChatTestUsers() {
+	for (const n of [1, 2]) {
+		await User.updateOne(
+			{ clerkId: `test_user_${n}` },
+			{ $setOnInsert: { fullName: `Test User ${n}`, imageUrl: "https://via.placeholder.com/150" } },
+			{ upsert: true },
+		);
+	}
+}
 
-// Try to start on the configured port
-startServer(parseInt(PORT || 5000, 10));
+/** Listen on PORT (default 5000), moving to the next port if it's taken. */
+function listen(port) {
+	server
+		.once("error", (error) => {
+			if (error.code !== "EADDRINUSE") throw error;
+			console.log(`Port ${port} is busy, trying ${port + 1}`);
+			listen(port + 1);
+		})
+		.listen(port, () => console.log(`API listening on http://localhost:${port}`));
+}
+
+await connectDB();
+await ensureChatTestUsers().catch((error) => console.error("Could not create chat test users:", error.message));
+listen(Number(process.env.PORT) || 5000);

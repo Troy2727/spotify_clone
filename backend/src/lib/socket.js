@@ -1,105 +1,59 @@
+// Real-time chat and "what friends are listening to" over Socket.IO.
+//
+// Client -> server: user_connected(userId), update_activity({ userId, activity }),
+//                   send_message({ receiverId, content })
+// Server -> client: users_online, activities, user_connected, user_disconnected,
+//                   activity_updated, receive_message, message_sent, message_error
+
 import { Server } from "socket.io";
-import { Message } from "../models/message.model.js";
+import { Message } from "../models/index.js";
+import { allowedOrigin } from "./origins.js";
 
-export const initializeSocket = (server) => {
-	// Allow connections from localhost and Vercel deployment
-	const allowedOrigins = [
-		"http://localhost:3000",
-		"http://localhost:3001",
-		"http://localhost:5173", // Vite default dev port
-		process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-		process.env.FRONTEND_URL || null
-	].filter(Boolean); // Remove null values
+export function initializeSocket(httpServer) {
+	const io = new Server(httpServer, { cors: { origin: allowedOrigin(), credentials: true } });
 
-	console.log("Allowed origins for socket.io:", allowedOrigins);
-
-	// In development, allow all origins
-	const corsConfig = process.env.NODE_ENV === 'production'
-		? { origin: allowedOrigins.length > 0 ? allowedOrigins : "*", credentials: true }
-		: { origin: "*", credentials: true };
-
-	console.log("Socket.io CORS config:", corsConfig);
-
-	const io = new Server(server, {
-		cors: corsConfig,
-		path: '/socket.io',
-	});
-
-	console.log("Socket.IO server initialized with CORS origins:", allowedOrigins);
-
-	const userSockets = new Map(); // { userId: socketId}
-	const userActivities = new Map(); // {userId: activity}
+	const socketOf = new Map(); // Clerk user id -> socket id
+	const activityOf = new Map(); // Clerk user id -> "Playing X by Y" | "Idle"
 
 	io.on("connection", (socket) => {
-		console.log("New socket connection established:", socket.id);
+		let me = null; // set once the client says who it is
 
 		socket.on("user_connected", (userId) => {
-			console.log("User connected event received:", userId);
-			userSockets.set(userId, socket.id);
-			userActivities.set(userId, "Idle");
-
-			console.log("Current connected users:", Array.from(userSockets.keys()));
-
-			// broadcast to all connected sockets that this user just logged in
+			me = userId;
+			socketOf.set(userId, socket.id);
+			activityOf.set(userId, "Idle");
 			io.emit("user_connected", userId);
-
-			socket.emit("users_online", Array.from(userSockets.keys()));
-
-			io.emit("activities", Array.from(userActivities.entries()));
+			socket.emit("users_online", [...socketOf.keys()]);
+			io.emit("activities", [...activityOf]);
 		});
 
-		socket.on("update_activity", ({ userId, activity }) => {
-			console.log("activity updated", userId, activity);
-			userActivities.set(userId, activity);
-			io.emit("activity_updated", { userId, activity });
+		socket.on("update_activity", ({ activity }) => {
+			if (!me) return;
+			activityOf.set(me, activity);
+			io.emit("activity_updated", { userId: me, activity });
 		});
 
-		socket.on("send_message", async (data) => {
-			console.log("Received send_message event:", data);
+		socket.on("send_message", async ({ receiverId, content }) => {
+			if (!me) return socket.emit("message_error", "Say user_connected before sending messages");
 			try {
-				const { senderId, receiverId, content } = data;
-				console.log("Creating message in database:", { senderId, receiverId, content });
-
-				const message = await Message.create({
-					senderId,
-					receiverId,
-					content,
-				});
-				console.log("Message created successfully:", message);
-
-				// send to receiver in realtime, if they're online
-				const receiverSocketId = userSockets.get(receiverId);
-				console.log("Receiver socket ID:", receiverSocketId);
-
-				if (receiverSocketId) {
-					console.log("Emitting receive_message to receiver:", receiverId);
-					io.to(receiverSocketId).emit("receive_message", message);
-				} else {
-					console.log("Receiver not online, message will be delivered when they connect");
-				}
-
-				console.log("Emitting message_sent to sender");
+				// The sender is whoever this socket connected as, not what the payload says.
+				const message = await Message.create({ senderId: me, receiverId, content });
+				const receiverSocket = socketOf.get(receiverId);
+				if (receiverSocket) io.to(receiverSocket).emit("receive_message", message);
 				socket.emit("message_sent", message);
 			} catch (error) {
-				console.error("Message error:", error);
 				socket.emit("message_error", error.message);
 			}
 		});
 
 		socket.on("disconnect", () => {
-			let disconnectedUserId;
-			for (const [userId, socketId] of userSockets.entries()) {
-				// find disconnected user
-				if (socketId === socket.id) {
-					disconnectedUserId = userId;
-					userSockets.delete(userId);
-					userActivities.delete(userId);
-					break;
-				}
-			}
-			if (disconnectedUserId) {
-				io.emit("user_disconnected", disconnectedUserId);
-			}
+			// Only forget the user if this was their current socket (not an older, replaced one).
+			if (!me || socketOf.get(me) !== socket.id) return;
+			socketOf.delete(me);
+			activityOf.delete(me);
+			io.emit("user_disconnected", me);
 		});
 	});
-};
+
+	return io;
+}
