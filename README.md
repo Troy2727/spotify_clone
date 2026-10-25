@@ -21,7 +21,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/animated/renders/home.gif" alt="Home page: greeting, featured songs grid, Made For You, friends listening panel and the player bar on a midnight-blue background" width="100%">
+  <a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/home.gif" title="Open this image full size">
+    <img src="docs/animated/renders/home.gif" alt="Home page: greeting, featured songs grid, Made For You, friends listening panel and the player bar on a midnight-blue background" width="100%">
+  </a>
+  <br />
+  <sub>Click the image to see it full size.</sub>
 </p>
 
 <p align="center">
@@ -54,9 +58,9 @@
 
 <table>
   <tr>
-    <td width="33%"><img src="docs/animated/renders/album.gif" alt="Album page with blurred cover header, play button and track list with equalizer"></td>
-    <td width="33%"><img src="docs/animated/renders/chat.gif" alt="Chat page with friends list and a conversation"></td>
-    <td width="33%"><img src="docs/animated/renders/admin.gif" alt="Admin dashboard overview with stat cards, top artists chart and recently added songs"></td>
+    <td width="33%"><a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/album.gif" title="Open this image full size"><img src="docs/animated/renders/album.gif" alt="Album page with blurred cover header, play button and track list with equalizer"></a></td>
+    <td width="33%"><a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/chat.gif" title="Open this image full size"><img src="docs/animated/renders/chat.gif" alt="Chat page with friends list and a conversation"></a></td>
+    <td width="33%"><a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/admin.gif" title="Open this image full size"><img src="docs/animated/renders/admin.gif" alt="Admin dashboard overview with stat cards, top artists chart and recently added songs"></a></td>
   </tr>
   <tr>
     <td align="center"><b>Album</b></td>
@@ -65,9 +69,17 @@
   </tr>
 </table>
 
+<p align="center"><sub>Click an image to see it full size.</sub></p>
+
 ## 🏗️ Architecture
 
-<img src="docs/animated/renders/architecture-dark.gif" alt="Architecture: the React app talks to an Express server with MongoDB and Socket.IO in local development, and to Vercel serverless functions serving a mock catalog in production; both verify sign-ins with Clerk, and local uploads go to Cloudinary." width="100%">
+<p align="center">
+  <a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/architecture-dark.gif" title="Open this image full size">
+    <img src="docs/animated/renders/architecture-dark.gif" alt="Architecture: the React app talks to an Express server with MongoDB and Socket.IO in local development, and to Vercel serverless functions serving a mock catalog in production; both verify sign-ins with Clerk, and local uploads go to Cloudinary." width="100%">
+  </a>
+  <br />
+  <sub>Click the image to see it full size.</sub>
+</p>
 
 | | Local development | Live demo (Vercel) |
 |---|---|---|
@@ -79,7 +91,13 @@
 
 ### How an admin request is verified
 
-<img src="docs/animated/renders/admin-auth-dark.gif" alt="Sequence: the browser calls a Vercel function with a Clerk session token; the function fetches Clerk's public keys, verifies the RS256 signature and expiry, looks up the user's primary email and returns the stats only if it matches ADMIN_EMAIL, otherwise 401 or 403." width="100%">
+<p align="center">
+  <a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/admin-auth-dark.gif" title="Open this image full size">
+    <img src="docs/animated/renders/admin-auth-dark.gif" alt="Sequence: the browser calls a Vercel function with a Clerk session token; the function fetches Clerk's public keys, verifies the RS256 signature and expiry, looks up the user's primary email and returns the stats only if it matches ADMIN_EMAIL, otherwise 401 or 403." width="100%">
+  </a>
+  <br />
+  <sub>Click the image to see it full size.</sub>
+</p>
 
 The check lives in [`api/_lib/clerkAdmin.js`](api/_lib/clerkAdmin.js) and uses only `node:crypto` — no extra dependencies. It mirrors the backend's [`requireAdmin`](backend/src/middleware/auth.middleware.js) rule: primary email equals `ADMIN_EMAIL`, or the user id is listed in `ADMIN_USER_IDS`.
 
