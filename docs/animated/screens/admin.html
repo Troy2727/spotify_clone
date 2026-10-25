@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- README screenshot animation (HyperFrames). Render from docs/: see docs/animated/render.sh -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1600, height=1150" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../screen.css" />
+  </head>
+  <body>
+    <div id="admin" data-composition-id="main" data-start="0" data-duration="8" data-width="1600" data-height="1150">
+      <script src="../screen.js"></script>
+      <script>
+        window.__timelines["main"] = SpotifyScreen.screen(document.getElementById("admin"), "Admin dashboard", {
+            "src": "../../images/screenshot-admin.png",
+            "alt": "Admin dashboard overview with stat cards, top artists chart and recently added songs",
+            "callouts": [
+              {
+                "x": 278,
+                "y": 114,
+                "w": 1134,
+                "h": 150,
+                "label": "catalog stats",
+                "lx": 560,
+                "ly": 30
+              },
+              {
+                "x": 280,
+                "y": 282,
+                "w": 554,
+                "h": 402,
+                "label": "top artists",
+                "lx": 300,
+                "ly": 706
+              },
+              {
+                "x": 854,
+                "y": 282,
+                "w": 556,
+                "h": 402,
+                "label": "recently added",
+                "lx": 870,
+                "ly": 706
+              }
+            ]
+          });
+      </script>
+    </div>
+  </body>
+</html>

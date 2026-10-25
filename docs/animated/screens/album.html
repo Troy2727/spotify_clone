@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- README screenshot animation (HyperFrames). Render from docs/: see docs/animated/render.sh -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1600, height=1150" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../screen.css" />
+  </head>
+  <body>
+    <div id="album" data-composition-id="main" data-start="0" data-duration="8" data-width="1600" data-height="1150">
+      <script src="../screen.js"></script>
+      <script>
+        window.__timelines["main"] = SpotifyScreen.screen(document.getElementById("album"), "Album pages", {
+            "src": "../../images/screenshot-album.png",
+            "alt": "Album page with blurred cover header, play button and track list with equalizer",
+            "callouts": [
+              {
+                "x": 316,
+                "y": 40,
+                "w": 812,
+                "h": 262,
+                "label": "blurred-cover header",
+                "lx": 600,
+                "ly": 318
+              },
+              {
+                "x": 340,
+                "y": 436,
+                "w": 784,
+                "h": 54,
+                "label": "now-playing equalizer",
+                "lx": 600,
+                "ly": 580
+              },
+              {
+                "x": 372,
+                "y": 832,
+                "w": 76,
+                "h": 40,
+                "label": "live audio waveform",
+                "lx": 300,
+                "ly": 760
+              }
+            ]
+          });
+      </script>
+    </div>
+  </body>
+</html>

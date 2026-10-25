@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- README screenshot animation (HyperFrames). Render from docs/: see docs/animated/render.sh -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1600, height=1150" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../screen.css" />
+  </head>
+  <body>
+    <div id="home" data-composition-id="main" data-start="0" data-duration="8" data-width="1600" data-height="1150">
+      <script src="../screen.js"></script>
+      <script>
+        window.__timelines["main"] = SpotifyScreen.screen(document.getElementById("home"), "Your music, live", {
+            "src": "../../images/screenshot-home.png",
+            "alt": "Home page: greeting, featured songs grid, Made For You, friends listening panel and the player bar on a midnight-blue background",
+            "callouts": [
+              {
+                "x": 316,
+                "y": 156,
+                "w": 808,
+                "h": 192,
+                "label": "featured songs",
+                "lx": 560,
+                "ly": 100
+              },
+              {
+                "x": 1160,
+                "y": 80,
+                "w": 262,
+                "h": 372,
+                "label": "what friends are playing",
+                "lx": 1060,
+                "ly": 472
+              },
+              {
+                "x": 420,
+                "y": 818,
+                "w": 600,
+                "h": 74,
+                "label": "player · seek · volume",
+                "lx": 440,
+                "ly": 752
+              }
+            ]
+          });
+      </script>
+    </div>
+  </body>
+</html>
