@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- README screenshot animation (HyperFrames). Render from docs/: see docs/animated/render.sh -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1600, height=1150" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../screen.css" />
+  </head>
+  <body>
+    <div id="chat" data-composition-id="main" data-start="0" data-duration="8" data-width="1600" data-height="1150">
+      <script src="../screen.js"></script>
+      <script>
+        window.__timelines["main"] = SpotifyScreen.screen(document.getElementById("chat"), "Chat with friends", {
+            "src": "../../images/screenshot-chat.png",
+            "alt": "Chat page with friends list and a conversation",
+            "callouts": [
+              {
+                "x": 312,
+                "y": 116,
+                "w": 276,
+                "h": 316,
+                "label": "who's online",
+                "lx": 330,
+                "ly": 452
+              },
+              {
+                "x": 606,
+                "y": 186,
+                "w": 486,
+                "h": 258,
+                "label": "real-time messages",
+                "lx": 640,
+                "ly": 480
+              },
+              {
+                "x": 924,
+                "y": 82,
+                "w": 210,
+                "h": 24,
+                "label": "simulated on the live demo",
+                "lx": 430,
+                "ly": 24
+              }
+            ]
+          });
+      </script>
+    </div>
+  </body>
+</html>
