@@ -67,10 +67,7 @@
 
 ## 🏗️ Architecture
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/animated/renders/architecture-dark.gif">
-  <img src="docs/animated/renders/architecture-light.gif" alt="Architecture: the React app talks to an Express server with MongoDB and Socket.IO in local development, and to Vercel serverless functions serving a mock catalog in production; both verify sign-ins with Clerk, and local uploads go to Cloudinary." width="100%">
-</picture>
+<img src="docs/animated/renders/architecture-dark.gif" alt="Architecture: the React app talks to an Express server with MongoDB and Socket.IO in local development, and to Vercel serverless functions serving a mock catalog in production; both verify sign-ins with Clerk, and local uploads go to Cloudinary." width="100%">
 
 | | Local development | Live demo (Vercel) |
 |---|---|---|
@@ -82,10 +79,7 @@
 
 ### How an admin request is verified
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/animated/renders/admin-auth-dark.gif">
-  <img src="docs/animated/renders/admin-auth-light.gif" alt="Sequence: the browser calls a Vercel function with a Clerk session token; the function fetches Clerk's public keys, verifies the RS256 signature and expiry, looks up the user's primary email and returns the stats only if it matches ADMIN_EMAIL, otherwise 401 or 403." width="100%">
-</picture>
+<img src="docs/animated/renders/admin-auth-dark.gif" alt="Sequence: the browser calls a Vercel function with a Clerk session token; the function fetches Clerk's public keys, verifies the RS256 signature and expiry, looks up the user's primary email and returns the stats only if it matches ADMIN_EMAIL, otherwise 401 or 403." width="100%">
 
 The check lives in [`api/_lib/clerkAdmin.js`](api/_lib/clerkAdmin.js) and uses only `node:crypto` — no extra dependencies. It mirrors the backend's [`requireAdmin`](backend/src/middleware/auth.middleware.js) rule: primary email equals `ADMIN_EMAIL`, or the user id is listed in `ADMIN_USER_IDS`.
 
