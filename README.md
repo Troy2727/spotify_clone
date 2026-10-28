@@ -10,14 +10,28 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white" alt="React 18">
-  <img src="https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white" alt="TypeScript 5">
-  <img src="https://img.shields.io/badge/Vite-4-646cff?logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3-06b6d4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white" alt="Express">
-  <img src="https://img.shields.io/badge/MongoDB-Mongoose-47a248?logo=mongodb&logoColor=white" alt="MongoDB">
-  <img src="https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white" alt="Socket.IO">
-  <img src="https://img.shields.io/badge/Clerk-auth-6c47ff?logo=clerk&logoColor=white" alt="Clerk">
+  <a href="https://react.dev"><img alt="React 18" src="https://img.shields.io/badge/React%2018-61DAFB?style=flat-square&logo=react&logoColor=black" /></a>
+  <a href="https://www.typescriptlang.org"><img alt="TypeScript 5.6" src="https://img.shields.io/badge/TypeScript%205.6-3178C6?style=flat-square&logo=typescript&logoColor=white" /></a>
+  <a href="https://vite.dev"><img alt="Vite 4" src="https://img.shields.io/badge/Vite%204-9135FF?style=flat-square&logo=vite&logoColor=white" /></a>
+  <a href="https://tailwindcss.com"><img alt="Tailwind CSS 3" src="https://img.shields.io/badge/Tailwind%20CSS%203-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" /></a>
+  <a href="https://ui.shadcn.com"><img alt="shadcn/ui" src="https://img.shields.io/badge/shadcn%2Fui-000000?style=flat-square&logo=shadcnui&logoColor=white" /></a>
+  <a href="https://www.radix-ui.com"><img alt="Radix UI" src="https://img.shields.io/badge/Radix%20UI-161618?style=flat-square&logo=radixui&logoColor=white" /></a>
+  <a href="https://zustand.docs.pmnd.rs"><img alt="Zustand 5" src="https://img.shields.io/badge/Zustand%205-555555?style=flat-square" /></a>
+  <a href="https://reactrouter.com"><img alt="React Router 6" src="https://img.shields.io/badge/React%20Router%206-CA4245?style=flat-square&logo=reactrouter&logoColor=white" /></a>
+  <a href="https://axios-http.com"><img alt="Axios" src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white" /></a>
+  <a href="https://lucide.dev"><img alt="Lucide" src="https://img.shields.io/badge/Lucide-F56565?style=flat-square&logo=lucide&logoColor=white" /></a>
+  <a href="https://nodejs.org"><img alt="Node.js" src="https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white" /></a>
+  <a href="https://expressjs.com"><img alt="Express 4" src="https://img.shields.io/badge/Express%204-0A0A0A?style=flat-square&logo=express&logoColor=white" /></a>
+  <a href="https://www.mongodb.com"><img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white" /></a>
+  <a href="https://mongoosejs.com"><img alt="Mongoose 8" src="https://img.shields.io/badge/Mongoose%208-880000?style=flat-square&logo=mongoose&logoColor=white" /></a>
+  <a href="https://socket.io"><img alt="Socket.IO 4" src="https://img.shields.io/badge/Socket.IO%204-010101?style=flat-square&logo=socketdotio&logoColor=white" /></a>
+  <a href="https://cloudinary.com"><img alt="Cloudinary" src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" /></a>
+  <a href="https://github.com/node-cron/node-cron"><img alt="node-cron" src="https://img.shields.io/badge/node--cron-555555?style=flat-square" /></a>
+  <a href="https://clerk.com"><img alt="Clerk 5" src="https://img.shields.io/badge/Clerk%205-6C47FF?style=flat-square&logo=clerk&logoColor=white" /></a>
+  <a href="https://vercel.com"><img alt="Vercel" src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" /></a>
+  <a href="https://github.com/features/actions"><img alt="GitHub Actions" src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" /></a>
+  <a href="https://codeql.github.com"><img alt="CodeQL" src="https://img.shields.io/badge/CodeQL-181717?style=flat-square&logo=github&logoColor=white" /></a>
+  <a href="https://eslint.org"><img alt="ESLint 9" src="https://img.shields.io/badge/ESLint%209-4B32C3?style=flat-square&logo=eslint&logoColor=white" /></a>
 </p>
 
 <p align="center">
@@ -31,7 +45,7 @@
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-screenshots">Screenshots</a> •
-  <a href="#️-architecture">Architecture</a> •
+  <a href="#-architecture">Architecture</a> •
   <a href="#-getting-started">Getting started</a> •
   <a href="#-deployment">Deployment</a> •
   <a href="#-project-structure">Structure</a> •
@@ -40,7 +54,7 @@
 
 ---
 
-## ✨ Features
+## <img src="docs/icons/sparkles.svg" width="24" height="24" alt="" /> Features
 
 | | |
 |---|---|
@@ -54,7 +68,7 @@
 
 > **About the live demo** — the deployed site has no database or chat server, so it serves a mock catalog. Chat friends are simulated and admin edits work for your session only (both are labelled *Demo mode*). Running locally gives you the full stack with MongoDB and Socket.IO.
 
-## 📸 Screenshots
+## <img src="docs/icons/image.svg" width="24" height="24" alt="" /> Screenshots
 
 <table>
   <tr>
@@ -71,7 +85,7 @@
 
 <p align="center"><sub>Click an image to see it full size.</sub></p>
 
-## 🏗️ Architecture
+## <img src="docs/icons/network.svg" width="24" height="24" alt="" /> Architecture
 
 <p align="center">
   <a href="https://github.com/Troy2727/spotify_clone/blob/main/docs/animated/renders/architecture-dark.gif" title="Open this image full size">
@@ -101,7 +115,37 @@
 
 The check lives in [`api/_lib/clerkAdmin.js`](api/_lib/clerkAdmin.js) and uses only `node:crypto` — no extra dependencies. It mirrors the backend's [`requireAdmin`](backend/src/middleware/auth.middleware.js) rule: primary email equals `ADMIN_EMAIL`, or the user id is listed in `ADMIN_USER_IDS`.
 
-## 🧰 Tech stack
+## <img src="docs/icons/layers.svg" width="24" height="24" alt="" /> Tech stack
+
+**Frontend**<br/>
+<a href="https://react.dev"><img alt="React 18" src="https://img.shields.io/badge/React%2018-61DAFB?style=flat-square&logo=react&logoColor=black" /></a>
+<a href="https://www.typescriptlang.org"><img alt="TypeScript 5.6" src="https://img.shields.io/badge/TypeScript%205.6-3178C6?style=flat-square&logo=typescript&logoColor=white" /></a>
+<a href="https://vite.dev"><img alt="Vite 4" src="https://img.shields.io/badge/Vite%204-9135FF?style=flat-square&logo=vite&logoColor=white" /></a>
+<a href="https://tailwindcss.com"><img alt="Tailwind CSS 3" src="https://img.shields.io/badge/Tailwind%20CSS%203-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" /></a>
+<a href="https://ui.shadcn.com"><img alt="shadcn/ui" src="https://img.shields.io/badge/shadcn%2Fui-000000?style=flat-square&logo=shadcnui&logoColor=white" /></a>
+<a href="https://www.radix-ui.com"><img alt="Radix UI" src="https://img.shields.io/badge/Radix%20UI-161618?style=flat-square&logo=radixui&logoColor=white" /></a>
+<a href="https://zustand.docs.pmnd.rs"><img alt="Zustand 5" src="https://img.shields.io/badge/Zustand%205-555555?style=flat-square" /></a>
+<a href="https://reactrouter.com"><img alt="React Router 6" src="https://img.shields.io/badge/React%20Router%206-CA4245?style=flat-square&logo=reactrouter&logoColor=white" /></a>
+<a href="https://axios-http.com"><img alt="Axios" src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white" /></a>
+<a href="https://lucide.dev"><img alt="Lucide" src="https://img.shields.io/badge/Lucide-F56565?style=flat-square&logo=lucide&logoColor=white" /></a>
+
+**Backend**<br/>
+<a href="https://nodejs.org"><img alt="Node.js" src="https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white" /></a>
+<a href="https://expressjs.com"><img alt="Express 4" src="https://img.shields.io/badge/Express%204-0A0A0A?style=flat-square&logo=express&logoColor=white" /></a>
+<a href="https://www.mongodb.com"><img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white" /></a>
+<a href="https://mongoosejs.com"><img alt="Mongoose 8" src="https://img.shields.io/badge/Mongoose%208-880000?style=flat-square&logo=mongoose&logoColor=white" /></a>
+<a href="https://socket.io"><img alt="Socket.IO 4" src="https://img.shields.io/badge/Socket.IO%204-010101?style=flat-square&logo=socketdotio&logoColor=white" /></a>
+<a href="https://cloudinary.com"><img alt="Cloudinary" src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" /></a>
+<a href="https://github.com/node-cron/node-cron"><img alt="node-cron" src="https://img.shields.io/badge/node--cron-555555?style=flat-square" /></a>
+
+**Auth**<br/>
+<a href="https://clerk.com"><img alt="Clerk 5" src="https://img.shields.io/badge/Clerk%205-6C47FF?style=flat-square&logo=clerk&logoColor=white" /></a>
+
+**Hosting & CI**<br/>
+<a href="https://vercel.com"><img alt="Vercel" src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" /></a>
+<a href="https://github.com/features/actions"><img alt="GitHub Actions" src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" /></a>
+<a href="https://codeql.github.com"><img alt="CodeQL" src="https://img.shields.io/badge/CodeQL-181717?style=flat-square&logo=github&logoColor=white" /></a>
+<a href="https://eslint.org"><img alt="ESLint 9" src="https://img.shields.io/badge/ESLint%209-4B32C3?style=flat-square&logo=eslint&logoColor=white" /></a>
 
 | Layer | Tools |
 |---|---|
@@ -110,7 +154,7 @@ The check lives in [`api/_lib/clerkAdmin.js`](api/_lib/clerkAdmin.js) and uses o
 | **Auth** | Clerk (Google OAuth) |
 | **Hosting & CI** | Vercel (static frontend + serverless `api/`), GitHub Actions, CodeQL |
 
-## 🚀 Getting started
+## <img src="docs/icons/rocket.svg" width="24" height="24" alt="" /> Getting started
 
 ### Prerequisites
 
@@ -177,7 +221,7 @@ npm run dev   # backend + frontend together
 | `npm run build` | Production build of the frontend |
 | `npm test` | Run backend and frontend tests |
 
-## 🌍 Deployment
+## <img src="docs/icons/cloud-upload.svg" width="24" height="24" alt="" /> Deployment
 
 The repo deploys to **Vercel** as one project: `frontend/dist` as static files plus every file in `api/` as a serverless function (`vercel.json` holds the build settings and rewrites). Pushes to `main` deploy to production automatically.
 
@@ -190,7 +234,7 @@ Good to know:
 - **Function limit** — the Hobby plan allows at most **12 serverless functions** per deployment. Helpers in `api/_lib/` don't count; any other new file in `api/` does.
 - **Demo mode** turns on automatically on `*.vercel.app` hosts ([`frontend/src/lib/demoMode.ts`](frontend/src/lib/demoMode.ts)). If you add a custom domain without a real backend, update that check first.
 
-## 📂 Project structure
+## <img src="docs/icons/folder-tree.svg" width="24" height="24" alt="" /> Project structure
 
 ```text
 spotify_clone/
@@ -221,7 +265,7 @@ spotify_clone/
 └── vercel.json
 ```
 
-## 🔄 CI/CD
+## <img src="docs/icons/workflow.svg" width="24" height="24" alt="" /> CI/CD
 
 Every pull request runs:
 
@@ -232,19 +276,19 @@ Every pull request runs:
 | `codeql-analysis.yml` | CodeQL security analysis (JavaScript/TypeScript, GitHub Actions) |
 | Vercel | Preview deployment for the PR; merges to `main` go to production |
 
-## 🤝 Contributing
+## <img src="docs/icons/git-pull-request.svg" width="24" height="24" alt="" /> Contributing
 
 1. Branch from `main` using `feature/<name>`, `bugfix/<name>`, `hotfix/<name>`, `chore/<name>` or `release/<version>` (lowercase, hyphens).
 2. Write [Conventional Commits](https://www.conventionalcommits.org/) with a sentence-case subject, at most 72 characters — e.g. `fix: Serve single albums so album pages load`.
 3. Open a pull request; all checks must pass before merging.
 
-## 👨‍💻 Author
+## <img src="docs/icons/user.svg" width="24" height="24" alt="" /> Author
 
 **Alex Mieses** — [@Troy2727](https://github.com/Troy2727)
 
 This project began as Burak Orkmez's [realtime-spotify-clone](https://github.com/burakorkmez/realtime-spotify-clone) MERN course project. The codebase has since been rewritten, and the Vercel demo catalog, demo mode, the mobile player and layout, and the server-side checks on chat senders and sign-up were built for this version.
 
-## 📄 License
+## <img src="docs/icons/scale.svg" width="24" height="24" alt="" /> License
 
 Released under the [MIT License](LICENSE).
 
