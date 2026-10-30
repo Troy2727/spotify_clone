@@ -1,4 +1,4 @@
-<h1 align="center">🎵 Spotify Clone</h1>
+<h1 align="center"><img src="frontend/public/spotify.png" alt="" width="36" height="36"> Spotify Clone</h1>
 
 <p align="center">
   <b>A full-stack music streaming app — playback, albums, social listening, chat and an admin dashboard.</b><br>
